@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:retro_tech_marketplace/main.dart';
+import 'package:retro_tech_marketplace/app.dart';
+import 'package:retro_tech_marketplace/store/listing_store.dart';
+import 'package:retro_tech_marketplace/store/seed_data.dart';
+import 'package:retro_tech_marketplace/constants/theme.dart';
+import 'package:retro_tech_marketplace/screens/settings/help_support_screen.dart';
+import 'package:retro_tech_marketplace/screens/settings/chat_thread_screen.dart';
+import 'package:retro_tech_marketplace/screens/product/product_detail_screen.dart';
+import 'package:retro_tech_marketplace/widgets/glass_scaffold.dart';
+import 'package:retro_tech_marketplace/screens/home/categories_screen.dart';
+import 'package:retro_tech_marketplace/screens/settings/about_screen.dart';
+
+
 
 void main() {
   void setPhoneSize(WidgetTester tester, [Size size = const Size(390, 844)]) {

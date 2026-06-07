@@ -1,0 +1,134 @@
+import 'package:flutter/material.dart';
+import '../constants/assets.dart';
+import '../constants/theme.dart';
+import 'aero_background.dart';
+import 'liquid_button.dart';
+import 'navigation.dart';
+
+class GlassScaffold extends StatelessWidget {
+  const GlassScaffold({
+    super.key,
+    required this.child,
+    this.bottomNavigationBar,
+    this.includeSafeArea = true,
+    this.backgroundAsset = Assets.background,
+    this.backgroundOverlay = true,
+    this.background,
+  });
+
+  final Widget child;
+  final Widget? bottomNavigationBar;
+  final bool includeSafeArea;
+  final String backgroundAsset;
+  final bool backgroundOverlay;
+  final Widget? background;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = includeSafeArea
+        ? SafeArea(bottom: false, child: child)
+        : child;
+    return Scaffold(
+      backgroundColor: const Color(0xFFEFF2F5),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth > 480
+              ? 440.0
+              : constraints.maxWidth;
+          return Center(
+            child: SizedBox(
+              width: width,
+              height: constraints.maxHeight,
+              child: Stack(
+                children: [
+                  background ??
+                      AeroBackground(
+                        asset: backgroundAsset,
+                        includeOverlay: backgroundOverlay,
+                      ),
+                  content,
+                  if (bottomNavigationBar != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: bottomNavigationBar!,
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class FormShell extends StatelessWidget {
+  const FormShell({
+    required this.title,
+    required this.action,
+    required this.onSave,
+    required this.children,
+    this.dangerAction,
+    this.onDanger,
+  });
+
+  final String title;
+  final String action;
+  final VoidCallback onSave;
+  final List<Widget> children;
+  final String? dangerAction;
+  final VoidCallback? onDanger;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassScaffold(
+      child: Stack(
+        children: [
+          ListView(
+            padding: EdgeInsets.fromLTRB(
+              22,
+              18,
+              22,
+              dangerAction == null ? 104 : 136,
+            ),
+            children: [
+              TopBar(
+                title: title,
+                trailing: title.contains('Edit')
+                    ? Icons.visibility_outlined
+                    : null,
+              ),
+              SizedBox(height: 22),
+              ...children,
+            ],
+          ),
+          Positioned(
+            left: 22,
+            right: 22,
+            bottom: dangerAction == null ? 22 : 54,
+            child: LiquidButton(
+              label: action,
+              icon: Icons.check_circle_outline_rounded,
+              onPressed: onSave,
+            ),
+          ),
+          if (dangerAction != null)
+            Positioned(
+              left: 22,
+              right: 22,
+              bottom: 12,
+              child: TextButton(
+                onPressed: onDanger,
+                child: Text(
+                  dangerAction!,
+                  style: AppTheme.label.copyWith(color: AppTheme.red),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
