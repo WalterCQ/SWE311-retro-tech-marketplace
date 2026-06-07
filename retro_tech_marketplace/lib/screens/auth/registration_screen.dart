@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import '../../constants/assets.dart';
+import '../../constants/theme.dart';
+import '../../store/listing_store.dart';
+import '../../widgets/glass_input.dart';
+import '../../widgets/glass_scaffold.dart';
+import '../../widgets/liquid_button.dart';
+import '../../widgets/logo_mark.dart';
+
+class RegistrationScreen extends StatefulWidget {
+  const RegistrationScreen({super.key, required this.store});
+
+  final ListingStore store;
+
+  @override
+  State<RegistrationScreen> createState() => _RegistrationScreenState();
+}
+
+class _RegistrationScreenState extends State<RegistrationScreen> {
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _confirm = TextEditingController();
+  bool _agree = true;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    _password.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassScaffold(
+      backgroundAsset: Assets.loginBackground,
+      backgroundOverlay: false,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(52, 64, 52, 28),
+        children: [
+          Align(alignment: Alignment.center, child: LogoMark(size: 100)),
+          SizedBox(height: 44),
+          RichText(
+            text: TextSpan(
+              style: AppTheme.h1.copyWith(fontSize: 32),
+              children: [
+                TextSpan(text: 'Create your\n'),
+                TextSpan(
+                  text: 'Retro ',
+                  style: TextStyle(color: AppTheme.blue),
+                ),
+                TextSpan(
+                  text: 'Tech',
+                  style: TextStyle(color: AppTheme.red),
+                ),
+                TextSpan(text: '\naccount'),
+              ],
+            ),
+          ),
+          SizedBox(height: 24),
+          GlassInput(
+            controller: _name,
+            hint: 'Full Name',
+            icon: Icons.person_outline_rounded,
+          ),
+          SizedBox(height: 12),
+          GlassInput(
+            controller: _email,
+            hint: 'Email Address',
+            icon: Icons.mail_outline_rounded,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          SizedBox(height: 12),
+          GlassInput(
+            controller: _password,
+            hint: 'Password',
+            icon: Icons.lock_outline_rounded,
+            obscure: true,
+          ),
+          SizedBox(height: 12),
+          GlassInput(
+            controller: _confirm,
+            hint: 'Confirm Password',
+            icon: Icons.lock_outline_rounded,
+            obscure: true,
+          ),
+          SizedBox(height: 18),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => setState(() => _agree = !_agree),
+                child: Icon(
+                  _agree ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: AppTheme.red,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: AppTheme.body.copyWith(fontSize: 12),
+                    children: [
+                      TextSpan(text: 'I agree to the '),
+                      TextSpan(
+                        text: 'Terms & Privacy Policy',
+                        style: TextStyle(
+                          color: AppTheme.blue,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 26),
+          LiquidButton(
+            label: 'Create Account',
+            icon: Icons.arrow_forward_rounded,
+            onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
+          ),
+          SizedBox(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Already have an account? ',
+                style: AppTheme.body.copyWith(fontSize: 12),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Text('Log In', style: AppTheme.label),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+

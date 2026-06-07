@@ -1,0 +1,10 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "retro_tech_marketplace",
+      "request": "launch",
+      "type": "dart"
+    }
+  ]
+}
