@@ -51,11 +51,17 @@ class FavoriteButtonState extends State<FavoriteButton> {
 }
 
 class HomeListingCard extends StatelessWidget {
-  const HomeListingCard({required this.listing, this.onTap, this.heroTag});
+  const HomeListingCard({
+    required this.listing,
+    this.onTap,
+    this.heroTag,
+    this.margin,
+  });
 
   final Listing listing;
   final VoidCallback? onTap;
   final Object? heroTag;
+  final EdgeInsetsGeometry? margin;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +84,7 @@ class HomeListingCard extends StatelessWidget {
         ? 225.0
         : 115.0;
     return Container(
-      margin: EdgeInsets.only(bottom: metrics.gutter + 2),
+      margin: margin ?? EdgeInsets.only(bottom: metrics.gutter + 2),
       child: LiquidPressable(
         onTap: onTap,
         borderRadius: BorderRadius.circular(metrics.cardRadius),
@@ -206,7 +212,6 @@ class HomeListingCard extends StatelessWidget {
     );
   }
 }
-
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.store});
@@ -483,9 +488,14 @@ class ListingCard extends StatelessWidget {
     final hasActions = onEdit != null || onDelete != null;
     final heroTag = listingHeroTag(listing);
 
-    Widget buildCard(VoidCallback? tap) {
+    Widget buildCard(VoidCallback? tap, {EdgeInsetsGeometry? margin}) {
       if (!hasActions) {
-        return HomeListingCard(listing: listing, onTap: tap, heroTag: heroTag);
+        return HomeListingCard(
+          listing: listing,
+          onTap: tap,
+          heroTag: heroTag,
+          margin: margin,
+        );
       }
       final imageWidth = 172.0;
       final imageHeight = 184.0;
@@ -524,7 +534,7 @@ class ListingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(metrics.cardRadius),
         glowColor: AppTheme.blue,
         child: GlassCard(
-          margin: EdgeInsets.only(bottom: metrics.gutter + 2),
+          margin: margin ?? EdgeInsets.only(bottom: metrics.gutter + 2),
           padding: EdgeInsets.fromLTRB(20, 16, 14, 18),
           radius: metrics.cardRadius,
           opacity: 0.22,
@@ -583,12 +593,15 @@ class ListingCard extends StatelessWidget {
     final store = openStore;
     if (store == null) return buildCard(onTap);
 
-    return OpenMotionContainer(
-      radius: metrics.cardRadius,
-      routeSettings: RouteSettings(name: '/product', arguments: listing),
-      openPage: ProductDetailScreen(store: store, listing: listing),
-      closedBuilder: buildCard,
+    return Container(
+      margin: EdgeInsets.only(bottom: metrics.gutter + 2),
+      child: OpenMotionContainer(
+        radius: metrics.cardRadius,
+        routeSettings: RouteSettings(name: '/product', arguments: listing),
+        openPage: ProductDetailScreen(store: store, listing: listing),
+        closedBuilder: (openContainer) =>
+            buildCard(openContainer, margin: EdgeInsets.zero),
+      ),
     );
   }
 }
-

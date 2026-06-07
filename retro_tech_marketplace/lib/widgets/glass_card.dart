@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 
-const maxGlassBlur = 20.0;
+const maxGlassBlur = 0.0;
 
 class GlassCard extends StatelessWidget {
   const GlassCard({
@@ -32,7 +32,21 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final glassBlur = blur.clamp(0.0, maxGlassBlur).toDouble();
     final glassSheen = opacity.clamp(0.08, 0.22).toDouble();
+    final glassFillOpacity = opacity.clamp(0.16, 0.58).toDouble();
     final glassBorderOpacity = borderOpacity.clamp(0.86, 0.96).toDouble();
+    final glassContent = Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        color: Colors.white.withValues(alpha: glassFillOpacity),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: glassBorderOpacity),
+          width: 1.1,
+        ),
+      ),
+      child: child,
+    );
+
     return Container(
       width: width,
       height: height,
@@ -54,21 +68,12 @@ class GlassCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: glassBlur, sigmaY: glassBlur),
-          child: Container(
-            padding: padding,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(radius),
-              color: Colors.transparent,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: glassBorderOpacity),
-                width: 1.1,
+        child: glassBlur == 0
+            ? glassContent
+            : BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: glassBlur, sigmaY: glassBlur),
+                child: glassContent,
               ),
-            ),
-            child: child,
-          ),
-        ),
       ),
     );
   }
