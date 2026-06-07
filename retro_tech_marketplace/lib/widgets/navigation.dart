@@ -155,12 +155,24 @@ class GlassBottomNav extends StatelessWidget {
                   borderRadius: BorderRadius.circular(addSize / 2),
                   glowColor: AppTheme.red,
                   pressedScale: 0.94,
-                  child: GlassCard(
+                  child: Container(
                     width: addSize,
                     height: addSize,
-                    radius: addSize / 2,
-                    padding: EdgeInsets.zero,
-                    opacity: 0.68,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.88),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.96),
+                        width: 1.1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFF1A2942).withValues(alpha: 0.1),
+                          offset: Offset(0, 14),
+                          blurRadius: 24,
+                        ),
+                      ],
+                    ),
                     child: Icon(
                       Icons.add_rounded,
                       color: AppTheme.red,
