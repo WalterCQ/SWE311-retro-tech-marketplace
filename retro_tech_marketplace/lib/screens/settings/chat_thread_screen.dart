@@ -15,8 +15,11 @@ class InboxScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final metrics = ResponsiveMetrics.of(context);
     final content = ListView(
-      padding: EdgeInsets.fromLTRB(22, 18, 22, inShell ? 118 : 30),
+      padding: inShell
+          ? metrics.pageInsetsWithNav
+          : EdgeInsets.fromLTRB(22, 18, 22, 30 + metrics.bottomSafeInset),
       children: [
         Row(
           children: [
@@ -71,13 +74,7 @@ class InboxScreen extends StatelessWidget {
 }
 
 class MessageTile extends StatelessWidget {
-  const MessageTile(
-    this.name,
-    this.message,
-    this.time,
-    this.badge,
-    this.asset,
-  );
+  const MessageTile(this.name, this.message, this.time, this.badge, this.asset);
 
   final String name;
   final String message;
@@ -142,7 +139,6 @@ class MessageTile extends StatelessWidget {
     );
   }
 }
-
 
 class ChatThreadScreen extends StatefulWidget {
   const ChatThreadScreen({super.key, this.listing});
@@ -432,4 +428,3 @@ class _ChatBubble extends StatelessWidget {
     );
   }
 }
-

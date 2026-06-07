@@ -16,8 +16,9 @@ class AccountProfileScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
+        final metrics = ResponsiveMetrics.of(context);
         return ListView(
-          padding: EdgeInsets.fromLTRB(22, 18, 22, 118),
+          padding: metrics.pageInsetsWithNav,
           children: [
             Align(
               alignment: Alignment.centerRight,
@@ -125,7 +126,6 @@ class AccountProfileScreen extends StatelessWidget {
   }
 }
 
-
 class ProfileRow extends StatelessWidget {
   const ProfileRow(this.title, this.badge, this.icon, this.onTap);
 
@@ -179,7 +179,6 @@ class ActivityTile extends StatelessWidget {
     );
   }
 }
-
 
 class CommunityPostCard extends StatelessWidget {
   const CommunityPostCard({
@@ -256,4 +255,3 @@ class CommunityPostCard extends StatelessWidget {
     );
   }
 }
-

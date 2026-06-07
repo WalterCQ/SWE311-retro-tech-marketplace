@@ -48,7 +48,7 @@ class CategoryDetailScreen extends StatelessWidget {
               ? store.listings
               : store.byCategory(category);
           return ListView(
-            padding: EdgeInsets.fromLTRB(22, 18, 22, 118),
+            padding: metrics.pageInsetsWithNav,
             children: [
               Row(
                 children: [
@@ -116,4 +116,3 @@ class CategoryDetailScreen extends StatelessWidget {
     );
   }
 }
-

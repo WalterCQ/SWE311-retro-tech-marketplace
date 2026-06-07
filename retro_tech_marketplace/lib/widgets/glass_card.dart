@@ -82,6 +82,7 @@ class ResponsiveMetrics {
     required this.topGap,
     required this.gutter,
     required this.bottomNavHeight,
+    required this.bottomSafeInset,
     required this.cardRadius,
   });
 
@@ -91,10 +92,12 @@ class ResponsiveMetrics {
   final double topGap;
   final double gutter;
   final double bottomNavHeight;
+  final double bottomSafeInset;
   final double cardRadius;
 
   factory ResponsiveMetrics.of(BuildContext context) {
     final mediaSize = MediaQuery.sizeOf(context);
+    final bottomSafeInset = MediaQuery.viewPaddingOf(context).bottom;
     final shellWidth = mediaSize.width > 480 ? 440.0 : mediaSize.width;
     final compactWidth = shellWidth < 360;
     final compactHeight = mediaSize.height < 740;
@@ -106,6 +109,7 @@ class ResponsiveMetrics {
       topGap: compactHeight ? 12 : 18,
       gutter: compactWidth ? 12 : 16,
       bottomNavHeight: compact ? 74 : 82,
+      bottomSafeInset: bottomSafeInset,
       cardRadius: compact ? 24 : 30,
     );
   }
@@ -119,7 +123,7 @@ class ResponsiveMetrics {
     pagePadding,
     topGap,
     pagePadding,
-    bottomNavHeight + 40,
+    bottomNavHeight + bottomSafeInset + 48,
   );
 
   double get homeCardHeight =>
