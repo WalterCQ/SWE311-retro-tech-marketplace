@@ -40,7 +40,6 @@ class LiquidPressableState extends State<LiquidPressable> {
     final borderRadius = widget.borderRadius;
 
     return MouseRegion(
-      cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
@@ -354,7 +353,6 @@ class SolidCircleButton extends StatelessWidget {
   }
 }
 
-
 class FilterPill extends StatelessWidget {
   const FilterPill(this.label, this.active);
 
@@ -390,4 +388,3 @@ class FilterPill extends StatelessWidget {
     );
   }
 }
-

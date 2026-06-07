@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 
+const maxGlassBlur = 20.0;
+
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
@@ -28,7 +30,7 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final glassBlur = blur < 72 ? 72.0 : blur;
+    final glassBlur = blur.clamp(0.0, maxGlassBlur).toDouble();
     final glassSheen = opacity.clamp(0.08, 0.22).toDouble();
     final glassBorderOpacity = borderOpacity.clamp(0.86, 0.96).toDouble();
     return Container(
@@ -136,7 +138,6 @@ class ResponsiveMetrics {
     return scaledValue.clamp(min, max ?? value * 1.12).toDouble();
   }
 }
-
 
 class GlassStatCard extends StatelessWidget {
   const GlassStatCard({
@@ -246,7 +247,6 @@ class GlassListRow extends StatelessWidget {
     );
   }
 }
-
 
 class ProfileStat extends StatelessWidget {
   const ProfileStat(

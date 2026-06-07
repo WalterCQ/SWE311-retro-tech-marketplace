@@ -265,8 +265,8 @@ class AboutHeroCopy extends StatelessWidget {
           text: TextSpan(
             style: heroStyle,
             children: [
-              const TextSpan(text: 'a '),
-              const TextSpan(
+              TextSpan(text: 'a '),
+              TextSpan(
                 text: 'Marketplace',
                 style: TextStyle(color: aboutRed),
               ),
@@ -297,7 +297,6 @@ class AboutHeroCopy extends StatelessWidget {
   }
 }
 
-
 const aboutInk = Color(0xFF080A0F);
 const aboutMuted = Color(0xFF5C637A);
 const aboutEyebrow = Color(0xFF4791DB);
@@ -305,7 +304,6 @@ const aboutBlue = Color(0xFF0573FF);
 const aboutRed = Color(0xFFFF080F);
 const aboutGreen = Color(0xFF0DB238);
 const aboutViolet = Color(0xFF7338F2);
-
 
 class AboutText {
   static const baseFont = 'Inter';
@@ -490,7 +488,7 @@ class AboutGlassSurface extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 72, sigmaY: 72),
+          filter: ImageFilter.blur(sigmaX: maxGlassBlur, sigmaY: maxGlassBlur),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.transparent,
@@ -765,4 +763,3 @@ class AboutNewsCard extends StatelessWidget {
     );
   }
 }
-
