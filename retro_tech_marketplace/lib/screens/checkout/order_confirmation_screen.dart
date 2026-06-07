@@ -129,4 +129,3 @@ class _ProgressChip extends StatelessWidget {
     );
   }
 }
-

@@ -74,7 +74,14 @@ class InboxScreen extends StatelessWidget {
 }
 
 class MessageTile extends StatelessWidget {
-  const MessageTile(this.name, this.message, this.time, this.badge, this.asset);
+  const MessageTile(
+    this.name,
+    this.message,
+    this.time,
+    this.badge,
+    this.asset, {
+    super.key,
+  });
 
   final String name;
   final String message;

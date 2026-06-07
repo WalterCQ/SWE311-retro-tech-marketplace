@@ -171,4 +171,3 @@ class _MoneyRow extends StatelessWidget {
     );
   }
 }
-

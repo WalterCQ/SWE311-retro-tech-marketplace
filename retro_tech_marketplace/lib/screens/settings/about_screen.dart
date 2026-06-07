@@ -255,7 +255,7 @@ class AboutScreen extends StatelessWidget {
 }
 
 class AboutHeroCopy extends StatelessWidget {
-  const AboutHeroCopy({required this.compact});
+  const AboutHeroCopy({super.key, required this.compact});
 
   final bool compact;
 
@@ -441,7 +441,7 @@ class AboutText {
 }
 
 class AboutBackground extends StatelessWidget {
-  const AboutBackground();
+  const AboutBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -467,6 +467,7 @@ class AboutBackground extends StatelessWidget {
 
 class AboutGlassSurface extends StatelessWidget {
   const AboutGlassSurface({
+    super.key,
     required this.child,
     required this.width,
     required this.height,
@@ -524,6 +525,7 @@ class AboutGlassSurface extends StatelessWidget {
 
 class AboutIconButton extends StatelessWidget {
   const AboutIconButton({
+    super.key,
     required this.icon,
     this.color = aboutInk,
     this.onTap,
@@ -558,7 +560,7 @@ class AboutIconButton extends StatelessWidget {
 }
 
 class SmallDash extends StatelessWidget {
-  const SmallDash(this.color);
+  const SmallDash(this.color, {super.key});
 
   final Color color;
 
@@ -581,6 +583,7 @@ class ValueCard extends StatelessWidget {
     this.title,
     this.text,
     this.color, {
+    super.key,
     required this.width,
     required this.iconTop,
     required this.titleLeft,
@@ -661,7 +664,13 @@ class ValueCard extends StatelessWidget {
 }
 
 class Number extends StatelessWidget {
-  const Number(this.value, this.label, this.color, {required this.width});
+  const Number(
+    this.value,
+    this.label,
+    this.color, {
+    super.key,
+    required this.width,
+  });
 
   final String value;
   final String label;
@@ -705,7 +714,7 @@ class Number extends StatelessWidget {
 }
 
 class AboutNewsCard extends StatelessWidget {
-  const AboutNewsCard();
+  const AboutNewsCard({super.key});
 
   @override
   Widget build(BuildContext context) {

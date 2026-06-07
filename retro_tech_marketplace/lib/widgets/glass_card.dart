@@ -262,6 +262,7 @@ class ProfileStat extends StatelessWidget {
     this.value,
     this.label,
     this.icon, {
+    super.key,
     this.color = AppTheme.blue,
   });
 

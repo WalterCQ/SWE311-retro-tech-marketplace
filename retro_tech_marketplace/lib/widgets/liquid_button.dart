@@ -5,6 +5,7 @@ import 'image_cache.dart';
 
 class LiquidPressable extends StatefulWidget {
   const LiquidPressable({
+    super.key,
     required this.child,
     this.onTap,
     this.borderRadius = const BorderRadius.all(Radius.circular(24)),
@@ -355,7 +356,7 @@ class SolidCircleButton extends StatelessWidget {
 }
 
 class FilterPill extends StatelessWidget {
-  const FilterPill(this.label, this.active);
+  const FilterPill(this.label, this.active, {super.key});
 
   final String label;
   final bool active;

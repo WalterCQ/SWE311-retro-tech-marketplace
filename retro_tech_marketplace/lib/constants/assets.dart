@@ -4,9 +4,9 @@ class Assets {
   static const loginBackground = 'assets/images/login-background.png';
   static const logoMark = 'assets/images/retro-tech-mark.png';
   static const homeAvatar = 'assets/images/home-avatar.png';
-  static const googleIcon = 'assets/images/google-logo-transparent.png';
-  static const appleIcon = 'assets/images/apple-logo-transparent.png';
-  static const facebookIcon = 'assets/images/facebook-logo-transparent.png';
+  static const googleIcon = 'assets/images/google-logo.svg';
+  static const appleIcon = 'assets/images/apple-logo.svg';
+  static const facebookIcon = 'assets/images/facebook-logo.svg';
   static const latestNewsThumbnail = 'assets/images/latest-news-thumbnail.png';
   static const v60 = 'assets/images/motorola-v60.png';
   static const ipodFront = 'assets/images/ipod-classic-front.png';

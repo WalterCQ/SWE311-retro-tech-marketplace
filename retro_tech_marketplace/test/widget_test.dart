@@ -11,8 +11,6 @@ import 'package:retro_tech_marketplace/widgets/glass_scaffold.dart';
 import 'package:retro_tech_marketplace/screens/home/categories_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/about_screen.dart';
 
-
-
 void main() {
   void setPhoneSize(WidgetTester tester, [Size size = const Size(390, 844)]) {
     tester.view.physicalSize = size;

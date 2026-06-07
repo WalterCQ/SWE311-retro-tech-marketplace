@@ -1,12 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../constants/assets.dart';
 import '../../constants/theme.dart';
 import '../../store/listing_store.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
-import '../../widgets/image_cache.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 
@@ -150,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class SocialLoginCluster extends StatelessWidget {
-  const SocialLoginCluster();
+  const SocialLoginCluster({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -164,8 +164,6 @@ class SocialLoginCluster extends StatelessWidget {
             .clamp(78.0, 108.0)
             .toDouble();
         final buttonHeight = (buttonWidth * 0.62).clamp(54.0, 66.0).toDouble();
-        final iconScale = buttonHeight / 52.0;
-
         return SizedBox(
           width: clusterWidth,
           child: Column(
@@ -209,8 +207,8 @@ class SocialLoginCluster extends StatelessWidget {
                     asset: Assets.googleIcon,
                     width: buttonWidth,
                     height: buttonHeight,
-                    iconWidth: 28 * iconScale,
-                    iconHeight: 28 * iconScale,
+                    iconWidth: 26.4,
+                    iconHeight: 26.4,
                   ),
                   SizedBox(width: gap),
                   SocialButton(
@@ -218,8 +216,8 @@ class SocialLoginCluster extends StatelessWidget {
                     asset: Assets.appleIcon,
                     width: buttonWidth,
                     height: buttonHeight,
-                    iconWidth: 29 * iconScale,
-                    iconHeight: 34 * iconScale,
+                    iconWidth: 24,
+                    iconHeight: 30,
                   ),
                   SizedBox(width: gap),
                   SocialButton(
@@ -227,8 +225,8 @@ class SocialLoginCluster extends StatelessWidget {
                     asset: Assets.facebookIcon,
                     width: buttonWidth,
                     height: buttonHeight,
-                    iconWidth: 35 * iconScale,
-                    iconHeight: 34 * iconScale,
+                    iconWidth: 28.8,
+                    iconHeight: 28.8,
                   ),
                 ],
               ),
@@ -242,6 +240,7 @@ class SocialLoginCluster extends StatelessWidget {
 
 class SocialButton extends StatelessWidget {
   const SocialButton({
+    super.key,
     required this.asset,
     required this.semanticLabel,
     required this.width,
@@ -304,16 +303,12 @@ class SocialButton extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      child: Image.asset(
+                      child: SvgPicture.asset(
                         asset,
                         width: iconWidth,
                         height: iconHeight,
                         fit: BoxFit.contain,
-                        cacheWidth: imageCacheDimension(
-                          context,
-                          iconWidth,
-                          logicalHeight: iconHeight,
-                        ),
+                        excludeFromSemantics: true,
                       ),
                     ),
                   ),

@@ -91,4 +91,3 @@ class SellerProfileScreen extends StatelessWidget {
     );
   }
 }
-

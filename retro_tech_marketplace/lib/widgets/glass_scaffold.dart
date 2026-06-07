@@ -66,6 +66,7 @@ class GlassScaffold extends StatelessWidget {
 
 class FormShell extends StatelessWidget {
   const FormShell({
+    super.key,
     required this.title,
     required this.action,
     required this.onSave,

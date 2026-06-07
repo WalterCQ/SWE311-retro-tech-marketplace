@@ -153,4 +153,3 @@ class _SettingsSwitch extends StatelessWidget {
     );
   }
 }
-

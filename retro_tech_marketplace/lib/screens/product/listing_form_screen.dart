@@ -217,4 +217,3 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
     if (mounted) Navigator.pop(context);
   }
 }
-

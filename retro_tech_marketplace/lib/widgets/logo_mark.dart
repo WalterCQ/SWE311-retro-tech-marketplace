@@ -100,7 +100,7 @@ InlineSpan accentSquare({required double size, double gap = 5}) {
 }
 
 class AccentSquare extends StatelessWidget {
-  const AccentSquare({required this.size});
+  const AccentSquare({super.key, required this.size});
 
   final double size;
 

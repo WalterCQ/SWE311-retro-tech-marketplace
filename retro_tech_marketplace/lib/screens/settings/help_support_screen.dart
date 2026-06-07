@@ -95,7 +95,7 @@ class HelpSupportScreen extends StatelessWidget {
 }
 
 class FaqTile extends StatefulWidget {
-  const FaqTile(this.title, this.body);
+  const FaqTile(this.title, this.body, {super.key});
 
   final String title;
   final String body;
@@ -159,4 +159,3 @@ class FaqTileState extends State<FaqTile> {
     );
   }
 }
-

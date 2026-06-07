@@ -63,6 +63,7 @@ class _MainShellState extends State<MainShell> {
 
 class AnimatedShellPage extends StatelessWidget {
   const AnimatedShellPage({
+    super.key,
     required this.active,
     required this.currentIndex,
     required this.pageIndex,
@@ -101,4 +102,3 @@ class AnimatedShellPage extends StatelessWidget {
     );
   }
 }
-

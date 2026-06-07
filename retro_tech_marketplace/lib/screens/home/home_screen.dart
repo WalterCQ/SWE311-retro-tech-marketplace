@@ -11,7 +11,7 @@ import '../product/product_detail_screen.dart';
 import '../profile/account_profile_screen.dart';
 
 class FavoriteButton extends StatefulWidget {
-  const FavoriteButton({this.size = 42});
+  const FavoriteButton({super.key, this.size = 42});
 
   final double size;
 
@@ -52,6 +52,7 @@ class FavoriteButtonState extends State<FavoriteButton> {
 
 class HomeListingCard extends StatelessWidget {
   const HomeListingCard({
+    super.key,
     required this.listing,
     this.onTap,
     this.heroTag,
@@ -380,7 +381,11 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeSegmentControl extends StatelessWidget {
-  const HomeSegmentControl({required this.value, required this.onChanged});
+  const HomeSegmentControl({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
 
   final int value;
   final ValueChanged<int> onChanged;
@@ -432,7 +437,7 @@ class HomeSegmentControl extends StatelessWidget {
 }
 
 class SegmentPill extends StatelessWidget {
-  const SegmentPill(this.label, this.active, this.onTap);
+  const SegmentPill(this.label, this.active, this.onTap, {super.key});
 
   final String label;
   final bool active;

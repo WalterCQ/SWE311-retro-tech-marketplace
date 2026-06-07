@@ -196,4 +196,3 @@ class _CategoryData {
   final IconData icon;
   final String asset;
 }
-

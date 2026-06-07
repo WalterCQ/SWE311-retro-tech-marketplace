@@ -127,7 +127,7 @@ class AccountProfileScreen extends StatelessWidget {
 }
 
 class ProfileRow extends StatelessWidget {
-  const ProfileRow(this.title, this.badge, this.icon, this.onTap);
+  const ProfileRow(this.title, this.badge, this.icon, this.onTap, {super.key});
 
   final String title;
   final String badge;
@@ -147,7 +147,13 @@ class ProfileRow extends StatelessWidget {
 }
 
 class ActivityTile extends StatelessWidget {
-  const ActivityTile(this.title, this.subtitle, this.time, this.asset);
+  const ActivityTile(
+    this.title,
+    this.subtitle,
+    this.time,
+    this.asset, {
+    super.key,
+  });
 
   final String title;
   final String subtitle;
@@ -182,6 +188,7 @@ class ActivityTile extends StatelessWidget {
 
 class CommunityPostCard extends StatelessWidget {
   const CommunityPostCard({
+    super.key,
     required this.user,
     required this.time,
     required this.text,

@@ -33,6 +33,7 @@ String categoryAssetFor(String category) {
 
 class OpenMotionContainer extends StatelessWidget {
   const OpenMotionContainer({
+    super.key,
     required this.openPage,
     required this.closedBuilder,
     required this.radius,
@@ -190,7 +191,7 @@ class GlassBottomNav extends StatelessWidget {
 }
 
 class NavItem extends StatelessWidget {
-  const NavItem(this.icon, this.label, this.active, this.onTap);
+  const NavItem(this.icon, this.label, this.active, this.onTap, {super.key});
 
   final IconData icon;
   final String label;
@@ -243,7 +244,12 @@ class NavItem extends StatelessWidget {
 }
 
 class TopBar extends StatelessWidget {
-  const TopBar({required this.title, this.trailing, this.onTrailingTap});
+  const TopBar({
+    super.key,
+    required this.title,
+    this.trailing,
+    this.onTrailingTap,
+  });
 
   final String title;
   final IconData? trailing;

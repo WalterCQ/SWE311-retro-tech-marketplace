@@ -106,7 +106,7 @@ class ProductDetailScreen extends StatelessWidget {
 }
 
 class ProductDetailPanel extends StatelessWidget {
-  const ProductDetailPanel({required this.item});
+  const ProductDetailPanel({super.key, required this.item});
 
   final Listing item;
 
@@ -261,7 +261,7 @@ class ProductDetailPanel extends StatelessWidget {
 }
 
 class Dots extends StatelessWidget {
-  const Dots();
+  const Dots({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +283,7 @@ class Dots extends StatelessWidget {
 }
 
 class SpecChip extends StatelessWidget {
-  const SpecChip(this.icon, this.value, this.label);
+  const SpecChip(this.icon, this.value, this.label, {super.key});
 
   final IconData icon;
   final String value;
