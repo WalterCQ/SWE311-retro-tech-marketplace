@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants/assets.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/image_cache.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -56,6 +57,11 @@ class AboutScreen extends StatelessWidget {
                             Assets.glassButterfly,
                             fit: BoxFit.contain,
                             filterQuality: FilterQuality.high,
+                            cacheWidth: imageCacheDimension(
+                              context,
+                              constraints.maxWidth * 0.5,
+                              logicalHeight: metrics.compact ? 168 : 210,
+                            ),
                           ),
                         ),
                       ),
@@ -72,6 +78,7 @@ class AboutScreen extends StatelessWidget {
                   Assets.glassButterfly,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
+                  cacheWidth: imageCacheDimension(context, 190),
                 ),
               ),
             ],
@@ -439,11 +446,20 @@ class AboutBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: Image.asset(
-        Assets.background,
-        fit: BoxFit.cover,
-        alignment: Alignment.topLeft,
-        filterQuality: FilterQuality.high,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Image.asset(
+            Assets.background,
+            fit: BoxFit.cover,
+            alignment: Alignment.topLeft,
+            filterQuality: FilterQuality.high,
+            cacheWidth: imageCacheDimension(
+              context,
+              constraints.maxWidth,
+              logicalHeight: constraints.maxHeight,
+            ),
+          );
+        },
       ),
     );
   }
@@ -715,6 +731,7 @@ class AboutNewsCard extends StatelessWidget {
                     height: compact ? 78 : 64,
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,
+                    cacheWidth: imageCacheDimension(context, compact ? 76 : 93),
                     errorBuilder: (context, error, stackTrace) => ProductImage(
                       asset: Assets.gameboy,
                       width: compact ? 76 : 93,

@@ -1,7 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/assets.dart';
 import '../constants/theme.dart';
+import 'image_cache.dart';
 
 class AeroBackground extends StatelessWidget {
   const AeroBackground({
@@ -15,51 +15,60 @@ class AeroBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.asset(
-          asset,
-          fit: BoxFit.cover,
-          alignment: Alignment.topCenter,
-          filterQuality: FilterQuality.high,
-        ),
-        if (includeOverlay) ...[
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.24),
-                  Colors.white.withValues(alpha: 0.08),
-                  Colors.white.withValues(alpha: 0.02),
-                ],
-                stops: const [0, 0.42, 1],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              asset,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              filterQuality: FilterQuality.high,
+              cacheWidth: imageCacheDimension(
+                context,
+                constraints.maxWidth,
+                logicalHeight: constraints.maxHeight,
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              heightFactor: 0.46,
-              child: DecoratedBox(
+            if (includeOverlay) ...[
+              DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                     colors: [
-                      Colors.white.withValues(alpha: 0),
-                      Colors.white.withValues(alpha: 0.12),
+                      Colors.white.withValues(alpha: 0.24),
+                      Colors.white.withValues(alpha: 0.08),
                       Colors.white.withValues(alpha: 0.02),
                     ],
+                    stops: const [0, 0.42, 1],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ],
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: FractionallySizedBox(
+                  heightFactor: 0.46,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withValues(alpha: 0),
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.02),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -99,6 +108,11 @@ class DetailAeroBackground extends StatelessWidget {
                         asset,
                         fit: BoxFit.fill,
                         filterQuality: FilterQuality.high,
+                        cacheWidth: imageCacheDimension(
+                          context,
+                          imageWidth,
+                          logicalHeight: imageHeight,
+                        ),
                       ),
                     ),
                     Positioned.fill(
@@ -127,4 +141,3 @@ class DetailAeroBackground extends StatelessWidget {
     );
   }
 }
-

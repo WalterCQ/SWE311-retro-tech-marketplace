@@ -1,7 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/theme.dart';
 import 'glass_card.dart';
+import 'image_cache.dart';
 
 class LiquidPressable extends StatefulWidget {
   const LiquidPressable({
@@ -295,6 +295,7 @@ class CircleGlassImageButton extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.contain,
+        cacheWidth: imageCacheDimension(context, size),
         errorBuilder: (context, error, stackTrace) => CircleGlassButton(
           icon: Icons.person_rounded,
           color: AppTheme.muted,

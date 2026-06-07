@@ -66,7 +66,6 @@ class OpenMotionContainer extends StatelessWidget {
   }
 }
 
-
 class GlassBottomNav extends StatelessWidget {
   const GlassBottomNav({
     super.key,
@@ -231,7 +230,6 @@ class NavItem extends StatelessWidget {
   }
 }
 
-
 class TopBar extends StatelessWidget {
   const TopBar({required this.title, this.trailing, this.onTrailingTap});
 
@@ -250,6 +248,8 @@ class TopBar extends StatelessWidget {
         Expanded(
           child: Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: AppTheme.h2.copyWith(fontSize: 18),
           ),

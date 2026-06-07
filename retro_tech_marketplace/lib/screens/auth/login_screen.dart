@@ -6,6 +6,7 @@ import '../../store/listing_store.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/image_cache.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 
@@ -308,6 +309,11 @@ class SocialButton extends StatelessWidget {
                         width: iconWidth,
                         height: iconHeight,
                         fit: BoxFit.contain,
+                        cacheWidth: imageCacheDimension(
+                          context,
+                          iconWidth,
+                          logicalHeight: iconHeight,
+                        ),
                       ),
                     ),
                   ),

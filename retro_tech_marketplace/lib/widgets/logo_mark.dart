@@ -1,8 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants/assets.dart';
 import '../constants/theme.dart';
 import 'glass_card.dart';
+import 'image_cache.dart';
 
 class LogoMark extends StatelessWidget {
   const LogoMark({super.key, this.size = 88});
@@ -22,6 +22,7 @@ class LogoMark extends StatelessWidget {
         child: Image.asset(
           Assets.logoMark,
           fit: BoxFit.cover,
+          cacheWidth: imageCacheDimension(context, size),
           errorBuilder: (context, error, stackTrace) =>
               Icon(Icons.devices_rounded, color: AppTheme.blue),
         ),
@@ -53,6 +54,7 @@ class ProductImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      cacheWidth: imageCacheDimension(context, width, logicalHeight: height),
       errorBuilder: (context, error, stackTrace) =>
           Icon(Icons.devices_rounded, size: width * 0.56),
     );
@@ -111,4 +113,3 @@ class AccentSquare extends StatelessWidget {
     );
   }
 }
-

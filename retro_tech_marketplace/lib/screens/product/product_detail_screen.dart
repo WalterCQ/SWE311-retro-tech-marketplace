@@ -142,6 +142,8 @@ class ProductDetailPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: RichText(
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   text: TextSpan(
                     style: AppTheme.h1.copyWith(
                       fontSize: metrics.compact ? 22 : 25,
@@ -336,4 +338,3 @@ class SpecChip extends StatelessWidget {
     );
   }
 }
-
