@@ -5,13 +5,14 @@ import 'glass_card.dart';
 import 'image_cache.dart';
 
 class LogoMark extends StatelessWidget {
-  const LogoMark({super.key, this.size = 88});
+  const LogoMark({super.key, this.size = 88, this.heroTag});
 
   final double size;
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    final mark = GlassCard(
       width: size,
       height: size,
       radius: size * 0.25,
@@ -27,6 +28,33 @@ class LogoMark extends StatelessWidget {
               Icon(Icons.devices_rounded, color: AppTheme.blue),
         ),
       ),
+    );
+    final tag = heroTag;
+    if (tag == null) return mark;
+    return Hero(
+      tag: tag,
+      transitionOnUserGestures: true,
+      createRectTween: (begin, end) =>
+          MaterialRectArcTween(begin: begin, end: end),
+      flightShuttleBuilder:
+          (context, animation, direction, fromHeroContext, toHeroContext) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOutCubic,
+              reverseCurve: Curves.easeInOutCubic,
+            );
+            final child = direction == HeroFlightDirection.push
+                ? toHeroContext.widget
+                : fromHeroContext.widget;
+            return FadeTransition(
+              opacity: curved,
+              child: ScaleTransition(
+                scale: Tween(begin: 0.96, end: 1.0).animate(curved),
+                child: child,
+              ),
+            );
+          },
+      child: mark,
     );
   }
 }

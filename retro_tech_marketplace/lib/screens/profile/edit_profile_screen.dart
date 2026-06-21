@@ -3,6 +3,7 @@ import '../../constants/theme.dart';
 import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/logo_mark.dart';
+import '../../widgets/navigation.dart';
 
 class EditProfileScreen extends StatelessWidget {
   EditProfileScreen({super.key});
@@ -22,7 +23,7 @@ class EditProfileScreen extends StatelessWidget {
       action: 'Save Profile',
       onSave: () => Navigator.pop(context),
       children: [
-        Center(child: LogoMark(size: 110)),
+        Center(child: LogoMark(size: 110, heroTag: accountLogoHeroTag)),
         SizedBox(height: 20),
         GlassInput(
           controller: _displayName,

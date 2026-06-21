@@ -21,7 +21,7 @@ class SellerProfileScreen extends StatelessWidget {
         children: [
           TopBar(title: 'Seller Profile', trailing: Icons.ios_share_rounded),
           SizedBox(height: 24),
-          Center(child: LogoMark(size: 112)),
+          Center(child: LogoMark(size: 112, heroTag: sellerLogoHeroTag)),
           SizedBox(height: 18),
           Center(
             child: Text(

@@ -4,6 +4,8 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
+import '../profile/edit_profile_screen.dart';
+import 'help_support_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.all(18),
             child: Row(
               children: [
-                LogoMark(size: 58),
+                LogoMark(size: 58, heroTag: accountLogoHeroTag),
                 SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -62,7 +64,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsRow(
                 Icons.person_outline_rounded,
                 'Account',
-                onTap: () => Navigator.pushNamed(context, '/edit-profile'),
+                openPage: EditProfileScreen(),
+                routeSettings: const RouteSettings(name: '/edit-profile'),
               ),
               _SettingsSwitch(
                 Icons.notifications_outlined,
@@ -90,7 +93,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsRow(
                 Icons.shield_outlined,
                 'Help Center',
-                onTap: () => Navigator.pushNamed(context, '/help'),
+                openPage: const HelpSupportScreen(),
+                routeSettings: const RouteSettings(name: '/help'),
               ),
             ],
           ),
@@ -121,16 +125,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 class _SettingsRow extends StatelessWidget {
-  const _SettingsRow(this.icon, this.label, {this.value, this.onTap});
+  const _SettingsRow(
+    this.icon,
+    this.label, {
+    this.value,
+    this.openPage,
+    this.routeSettings,
+  });
 
   final IconData icon;
   final String label;
   final String? value;
-  final VoidCallback? onTap;
+  final Widget? openPage;
+  final RouteSettings? routeSettings;
 
   @override
   Widget build(BuildContext context) {
-    return GlassListRow(icon: icon, title: label, value: value, onTap: onTap);
+    final page = openPage;
+    if (page != null) {
+      return OpenMotionListRow(
+        icon: icon,
+        title: label,
+        value: value,
+        openPage: page,
+        routeSettings: routeSettings,
+      );
+    }
+    return GlassListRow(icon: icon, title: label, value: value);
   }
 }
 

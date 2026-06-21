@@ -19,6 +19,10 @@ String listingHeroTag(Listing listing) => 'listing-image-${listing.id}';
 
 String categoryHeroTag(String category) => 'category-image-$category';
 
+const authLogoHeroTag = 'logo-auth';
+const accountLogoHeroTag = 'logo-account';
+const sellerLogoHeroTag = 'logo-seller';
+
 String categoryAssetFor(String category) {
   return switch (category.toLowerCase()) {
     'phones' => Assets.v60,
@@ -82,6 +86,7 @@ class GlassBottomNav extends StatelessWidget {
     final activeRealIndex = currentIndex >= 2 ? currentIndex + 1 : currentIndex;
     final metrics = ResponsiveMetrics.of(context);
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final navBottomGap = bottomInset > 0 ? 16.0 : 8.0;
     final barHeight = metrics.compact ? 62.0 : 66.0;
     final addLift = metrics.compact ? 10.0 : 12.0;
     final addSize = metrics.compact ? 60.0 : 64.0;
@@ -90,7 +95,7 @@ class GlassBottomNav extends StatelessWidget {
         metrics.pagePadding,
         0,
         metrics.pagePadding,
-        bottomInset + 8,
+        navBottomGap,
       ),
       child: SizedBox(
         height: barHeight + addLift,
@@ -238,6 +243,50 @@ class NavItem extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class OpenMotionListRow extends StatelessWidget {
+  const OpenMotionListRow({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.openPage,
+    this.value,
+    this.badge,
+    this.iconColor = AppTheme.blue,
+    this.badgeColor = AppTheme.blue,
+    this.dense = false,
+    this.routeSettings,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget openPage;
+  final String? value;
+  final String? badge;
+  final Color iconColor;
+  final Color badgeColor;
+  final bool dense;
+  final RouteSettings? routeSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return OpenMotionContainer(
+      radius: dense ? 24 : 30,
+      openPage: openPage,
+      routeSettings: routeSettings,
+      closedBuilder: (openContainer) => GlassListRow(
+        icon: icon,
+        title: title,
+        value: value,
+        badge: badge,
+        iconColor: iconColor,
+        badgeColor: badgeColor,
+        dense: dense,
+        onTap: openContainer,
       ),
     );
   }

@@ -23,6 +23,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   Widget build(BuildContext context) {
     final metrics = ResponsiveMetrics.of(context);
+    final categoryColumns = metrics.categoryColumns;
     final categories = [
       _CategoryData(
         'Phones',
@@ -115,8 +116,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: visibleCategories.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: metrics.categoryColumns,
-            childAspectRatio: metrics.categoryColumns == 3 ? 0.86 : 1.06,
+            crossAxisCount: categoryColumns,
+            childAspectRatio: metrics.categoryCardAspectRatio,
             crossAxisSpacing: metrics.gutter,
             mainAxisSpacing: metrics.gutter,
           ),

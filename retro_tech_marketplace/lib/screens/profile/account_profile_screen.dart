@@ -5,6 +5,12 @@ import '../../store/listing_store.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
+import '../../widgets/navigation.dart';
+import '../checkout/checkout_screen.dart';
+import '../product/my_listings_screen.dart';
+import '../settings/chat_thread_screen.dart';
+import '../settings/settings_screen.dart';
+import 'edit_profile_screen.dart';
 
 class AccountProfileScreen extends StatelessWidget {
   const AccountProfileScreen({super.key, required this.store});
@@ -22,13 +28,18 @@ class AccountProfileScreen extends StatelessWidget {
           children: [
             Align(
               alignment: Alignment.centerRight,
-              child: CircleGlassButton(
-                icon: Icons.settings_rounded,
-                onTap: () => Navigator.pushNamed(context, '/settings'),
+              child: OpenMotionContainer(
+                radius: 23,
+                openPage: const SettingsScreen(),
+                routeSettings: const RouteSettings(name: '/settings'),
+                closedBuilder: (openContainer) => CircleGlassButton(
+                  icon: Icons.settings_rounded,
+                  onTap: openContainer,
+                ),
               ),
             ),
             SizedBox(height: 2),
-            Center(child: LogoMark(size: 94)),
+            Center(child: LogoMark(size: 94, heroTag: accountLogoHeroTag)),
             SizedBox(height: 12),
             Center(
               child: Text(
@@ -48,9 +59,14 @@ class AccountProfileScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Center(
-              child: TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/edit-profile'),
-                child: Text('Edit Profile', style: AppTheme.label),
+              child: OpenMotionContainer(
+                radius: 18,
+                openPage: EditProfileScreen(),
+                routeSettings: const RouteSettings(name: '/edit-profile'),
+                closedBuilder: (openContainer) => TextButton(
+                  onPressed: openContainer,
+                  child: Text('Edit Profile', style: AppTheme.label),
+                ),
               ),
             ),
             SizedBox(height: 10),
@@ -83,17 +99,21 @@ class AccountProfileScreen extends StatelessWidget {
                   'My Listings',
                   '${store.listings.length}',
                   Icons.sell_outlined,
-                  () => Navigator.pushNamed(context, '/my-listings'),
+                  null,
+                  openPage: MyListingsScreen(store: store),
+                  routeSettings: const RouteSettings(name: '/my-listings'),
                 ),
                 ProfileRow(
                   'Orders',
                   '8',
                   Icons.inventory_2_outlined,
-                  () => Navigator.pushNamed(
-                    context,
-                    '/checkout',
-                    arguments: store.listings.first,
+                  null,
+                  openPage: CheckoutScreen(
+                    listing: store.listings.isEmpty
+                        ? null
+                        : store.listings.first,
                   ),
+                  routeSettings: const RouteSettings(name: '/checkout'),
                 ),
                 ProfileRow(
                   'Saved Items',
@@ -105,7 +125,9 @@ class AccountProfileScreen extends StatelessWidget {
                   'Messages',
                   '8',
                   Icons.chat_bubble_outline_rounded,
-                  () => Navigator.pushNamed(context, '/chat'),
+                  null,
+                  openPage: const ChatThreadScreen(),
+                  routeSettings: const RouteSettings(name: '/chat'),
                 ),
               ],
             ),
@@ -127,15 +149,36 @@ class AccountProfileScreen extends StatelessWidget {
 }
 
 class ProfileRow extends StatelessWidget {
-  const ProfileRow(this.title, this.badge, this.icon, this.onTap, {super.key});
+  const ProfileRow(
+    this.title,
+    this.badge,
+    this.icon,
+    this.onTap, {
+    super.key,
+    this.openPage,
+    this.routeSettings,
+  });
 
   final String title;
   final String badge;
   final IconData icon;
   final VoidCallback? onTap;
+  final Widget? openPage;
+  final RouteSettings? routeSettings;
 
   @override
   Widget build(BuildContext context) {
+    final page = openPage;
+    if (page != null) {
+      return OpenMotionListRow(
+        icon: icon,
+        title: title,
+        badge: badge,
+        dense: true,
+        openPage: page,
+        routeSettings: routeSettings,
+      );
+    }
     return GlassListRow(
       icon: icon,
       title: title,

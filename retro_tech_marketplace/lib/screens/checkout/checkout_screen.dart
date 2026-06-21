@@ -7,6 +7,7 @@ import '../../widgets/glass_scaffold.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
+import '../profile/payment_methods_screen.dart';
 
 class CheckoutScreen extends StatelessWidget {
   const CheckoutScreen({super.key, this.listing});
@@ -62,7 +63,8 @@ class CheckoutScreen extends StatelessWidget {
                 Icons.credit_card_outlined,
                 'Payment Method',
                 'Visa ending 2048   Default',
-                onTap: () => Navigator.pushNamed(context, '/payment-methods'),
+                openPage: const PaymentMethodsScreen(),
+                routeSettings: const RouteSettings(name: '/payment-methods'),
               ),
               _CheckoutTile(
                 Icons.shield_outlined,
@@ -106,38 +108,64 @@ class CheckoutScreen extends StatelessWidget {
 }
 
 class _CheckoutTile extends StatelessWidget {
-  const _CheckoutTile(this.icon, this.title, this.body, {this.onTap});
+  const _CheckoutTile(
+    this.icon,
+    this.title,
+    this.body, {
+    this.openPage,
+    this.routeSettings,
+  });
 
   final IconData icon;
   final String title;
   final String body;
-  final VoidCallback? onTap;
+  final Widget? openPage;
+  final RouteSettings? routeSettings;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: GlassCard(
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Icon(icon, color: AppTheme.blue),
-            SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.w900)),
-                  Text(body, style: AppTheme.body.copyWith(fontSize: 12)),
-                ],
+    Widget tile(VoidCallback? tap, {EdgeInsetsGeometry? margin}) {
+      return LiquidPressable(
+        onTap: tap,
+        borderRadius: BorderRadius.circular(30),
+        glowColor: AppTheme.blue,
+        child: GlassCard(
+          margin: margin,
+          padding: EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(icon, color: AppTheme.blue),
+              SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(fontWeight: FontWeight.w900)),
+                    Text(body, style: AppTheme.body.copyWith(fontSize: 12)),
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
-          ],
+              Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    final page = openPage;
+    if (page != null) {
+      return Container(
+        margin: EdgeInsets.only(bottom: 12),
+        child: OpenMotionContainer(
+          radius: 30,
+          openPage: page,
+          routeSettings: routeSettings,
+          closedBuilder: (openContainer) => tile(openContainer),
+        ),
+      );
+    }
+
+    return tile(null, margin: EdgeInsets.only(bottom: 12));
   }
 }
 

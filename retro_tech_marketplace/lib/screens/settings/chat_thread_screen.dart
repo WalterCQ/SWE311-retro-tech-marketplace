@@ -7,6 +7,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
+import '../../widgets/navigation.dart';
 
 class InboxScreen extends StatelessWidget {
   const InboxScreen({super.key, this.inShell = false});
@@ -91,56 +92,65 @@ class MessageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LiquidPressable(
-      onTap: () => Navigator.pushNamed(context, '/chat'),
-      borderRadius: BorderRadius.circular(30),
-      glowColor: AppTheme.blue,
-      child: GlassCard(
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(12),
-        child: Row(
-          children: [
-            ClipOval(child: ProductImage(asset: asset, width: 48, height: 48)),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: TextStyle(fontWeight: FontWeight.w900)),
-                  SizedBox(height: 4),
-                  Text(
-                    message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.body.copyWith(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 8),
-            Column(
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      child: OpenMotionContainer(
+        radius: 30,
+        openPage: const ChatThreadScreen(),
+        routeSettings: const RouteSettings(name: '/chat'),
+        closedBuilder: (openContainer) => LiquidPressable(
+          onTap: openContainer,
+          borderRadius: BorderRadius.circular(30),
+          glowColor: AppTheme.blue,
+          child: GlassCard(
+            padding: EdgeInsets.all(12),
+            child: Row(
               children: [
-                Text(time, style: AppTheme.body.copyWith(fontSize: 10)),
-                if (badge.isNotEmpty)
-                  Container(
-                    margin: EdgeInsets.only(top: 8),
-                    padding: EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: AppTheme.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 10,
+                ClipOval(
+                  child: ProductImage(asset: asset, width: 48, height: 48),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: TextStyle(fontWeight: FontWeight.w900)),
+                      SizedBox(height: 4),
+                      Text(
+                        message,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.body.copyWith(fontSize: 12),
                       ),
-                    ),
+                    ],
                   ),
+                ),
+                SizedBox(width: 8),
+                Column(
+                  children: [
+                    Text(time, style: AppTheme.body.copyWith(fontSize: 10)),
+                    if (badge.isNotEmpty)
+                      Container(
+                        margin: EdgeInsets.only(top: 8),
+                        padding: EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: AppTheme.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          badge,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

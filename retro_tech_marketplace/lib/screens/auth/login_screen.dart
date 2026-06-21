@@ -9,6 +9,7 @@ import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
+import '../../widgets/navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.store});
@@ -46,7 +47,12 @@ class _LoginScreenState extends State<LoginScreen> {
           28,
         ),
         children: [
-          Center(child: LogoMark(size: metrics.compact ? 110 : 120)),
+          Center(
+            child: LogoMark(
+              size: metrics.compact ? 110 : 120,
+              heroTag: authLogoHeroTag,
+            ),
+          ),
           SizedBox(height: metrics.compact ? 56 : 64),
           Center(
             child: RichText(

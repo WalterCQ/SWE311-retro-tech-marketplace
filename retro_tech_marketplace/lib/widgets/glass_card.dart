@@ -44,7 +44,7 @@ class GlassCard extends StatelessWidget {
           width: 1.1,
         ),
       ),
-      child: child,
+      child: Material(type: MaterialType.transparency, child: child),
     );
 
     return Container(
@@ -140,7 +140,9 @@ class ResponsiveMetrics {
   double get detailImageHeight =>
       (height * (compact ? 0.34 : 0.39)).clamp(230.0, 350.0).toDouble();
 
-  int get categoryColumns => width >= 410 ? 3 : 2;
+  int get categoryColumns => width >= 440 ? 3 : 2;
+
+  double get categoryCardAspectRatio => categoryColumns >= 3 ? 0.86 : 0.9;
 
   double scaled(double value, {double min = 0, double? max}) {
     final scaledValue = value * (width / 390);

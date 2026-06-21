@@ -223,7 +223,7 @@ class ProductDetailPanel extends StatelessWidget {
           SizedBox(height: metrics.compact ? 10 : 12),
           Row(
             children: [
-              LogoMark(size: 43),
+              LogoMark(size: 43, heroTag: sellerLogoHeroTag),
               SizedBox(width: metrics.gutter),
               Expanded(
                 child: Column(

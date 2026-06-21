@@ -6,6 +6,7 @@ import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
+import '../../widgets/navigation.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key, required this.store});
@@ -40,7 +41,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       child: ListView(
         padding: EdgeInsets.fromLTRB(52, 64, 52, 28),
         children: [
-          Align(alignment: Alignment.center, child: LogoMark(size: 100)),
+          Align(
+            alignment: Alignment.center,
+            child: LogoMark(size: 100, heroTag: authLogoHeroTag),
+          ),
           SizedBox(height: 44),
           RichText(
             text: TextSpan(
