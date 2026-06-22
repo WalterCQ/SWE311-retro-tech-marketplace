@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retro_tech_marketplace/app.dart';
+import 'package:retro_tech_marketplace/constants/assets.dart';
 import 'package:retro_tech_marketplace/store/listing_store.dart';
 import 'package:retro_tech_marketplace/store/seed_data.dart';
 import 'package:retro_tech_marketplace/constants/theme.dart';
@@ -18,6 +19,22 @@ void main() {
     expect(compareVersionNames('1.0.4', 'v1.0.4+5'), 0);
     expect(compareVersionNames('v1.0.3', '1.0.4'), lessThan(0));
   });
+
+  test(
+    'product galleries keep original first image and expose three images',
+    () {
+      for (final listing in seedListings) {
+        expect(listing.detailImageAssets, hasLength(3));
+        expect(listing.detailImageAssets.first, listing.imageAsset);
+      }
+
+      final watchListing = seedListings.first.copyWith(
+        imageAsset: Assets.watch,
+      );
+      expect(watchListing.detailImageAssets, hasLength(3));
+      expect(watchListing.detailImageAssets.first, Assets.watch);
+    },
+  );
 
   void setPhoneSize(WidgetTester tester, [Size size = const Size(390, 844)]) {
     tester.view.physicalSize = size;
@@ -141,6 +158,52 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+  });
+
+  testWidgets('product detail gallery swipes and dots select images', (
+    WidgetTester tester,
+  ) async {
+    setPhoneSize(tester);
+    final ipod = seedListings.firstWhere((item) => item.id == 'ipod-classic');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: ProductDetailScreen(store: ListingStore(), listing: ipod),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('product-gallery-page-view')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('product-gallery-dot-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('product-gallery-dot-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('product-gallery-dot-2')), findsOneWidget);
+    expect(find.text('Contact Seller'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('product-gallery-dot-0'))).width,
+      20,
+    );
+
+    await tester.drag(
+      find.byKey(const ValueKey('product-gallery-page-view')),
+      const Offset(-320, 0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('product-gallery-dot-1'))).width,
+      20,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('product-gallery-dot-2')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('product-gallery-dot-2'))).width,
+      20,
+    );
   });
 
   testWidgets('key screens fit common phone widths', (

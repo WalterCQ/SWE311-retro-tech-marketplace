@@ -63,23 +63,11 @@ class ProductDetailScreen extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: metrics.compact ? 14 : 22),
-                    Center(
-                      child: SizedBox(
-                        height: metrics.detailImageHeight,
-                        width: constraints.maxWidth - metrics.pagePadding * 2,
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: ProductImage(
-                            asset: item.imageAsset,
-                            width: 316,
-                            height: 413,
-                            heroTag: listingHeroTag(item),
-                          ),
-                        ),
-                      ),
+                    ProductGallery(
+                      item: item,
+                      height: metrics.detailImageHeight,
+                      width: constraints.maxWidth - metrics.pagePadding * 2,
                     ),
-                    SizedBox(height: metrics.compact ? 8 : 14),
-                    const Center(child: Dots()),
                     SizedBox(height: metrics.compact ? 14 : 20),
                     ProductDetailPanel(item: item),
                   ],
@@ -101,6 +89,98 @@ class ProductDetailScreen extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class ProductGallery extends StatefulWidget {
+  const ProductGallery({
+    super.key,
+    required this.item,
+    required this.height,
+    required this.width,
+  });
+
+  final Listing item;
+  final double height;
+  final double width;
+
+  @override
+  State<ProductGallery> createState() => _ProductGalleryState();
+}
+
+class _ProductGalleryState extends State<ProductGallery> {
+  late final PageController _controller;
+  int _activeIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+  }
+
+  @override
+  void didUpdateWidget(ProductGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final imageCount = widget.item.detailImageAssets.length;
+    if (_activeIndex >= imageCount) {
+      _activeIndex = 0;
+      _controller.jumpToPage(0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final images = widget.item.detailImageAssets;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(
+          child: SizedBox(
+            height: widget.height,
+            width: widget.width,
+            child: PageView.builder(
+              key: const ValueKey('product-gallery-page-view'),
+              controller: _controller,
+              physics: const BouncingScrollPhysics(),
+              itemCount: images.length,
+              onPageChanged: (index) => setState(() => _activeIndex = index),
+              itemBuilder: (context, index) {
+                return FittedBox(
+                  fit: BoxFit.contain,
+                  child: ProductImage(
+                    asset: images[index],
+                    width: 316,
+                    height: 413,
+                    heroTag: index == _activeIndex
+                        ? listingHeroTag(widget.item)
+                        : null,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        SizedBox(height: ResponsiveMetrics.of(context).compact ? 8 : 14),
+        Center(
+          child: Dots(
+            count: images.length,
+            activeIndex: _activeIndex,
+            keyPrefix: 'product-gallery',
+            onSelected: (index) => _controller.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -261,20 +341,54 @@ class ProductDetailPanel extends StatelessWidget {
 }
 
 class Dots extends StatelessWidget {
-  const Dots({super.key});
+  const Dots({
+    super.key,
+    this.count = 4,
+    this.activeIndex = 0,
+    this.onSelected,
+    this.keyPrefix,
+  });
+
+  final int count;
+  final int activeIndex;
+  final ValueChanged<int>? onSelected;
+  final String? keyPrefix;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(4, (index) {
-        return Container(
-          width: index == 0 ? 20 : 8,
+      children: List.generate(count, (index) {
+        final active = index == activeIndex;
+        final indicator = AnimatedContainer(
+          key: keyPrefix == null ? null : ValueKey('$keyPrefix-dot-$index'),
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          width: active ? 20 : 8,
           height: 5,
-          margin: EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(99),
-            color: index == 0 ? AppTheme.red : AppTheme.line,
+            color: active ? AppTheme.red : AppTheme.line,
+          ),
+        );
+        if (onSelected == null) {
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: indicator,
+          );
+        }
+        return Semantics(
+          button: true,
+          selected: active,
+          label: 'Show product image ${index + 1}',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onSelected!(index),
+            child: SizedBox(
+              width: 28,
+              height: 22,
+              child: Center(child: indicator),
+            ),
           ),
         );
       }),

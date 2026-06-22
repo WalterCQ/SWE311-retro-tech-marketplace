@@ -39,6 +39,67 @@ class Listing {
 
   String get priceLabel => 'RM ${price.toStringAsFixed(2)}';
   String get shortTitle => subtitle.isEmpty ? title : '$title\n$subtitle';
+  List<String> get detailImageAssets {
+    switch (imageAsset) {
+      case Assets.v60:
+        return const [Assets.v60, Assets.v60GallerySide, Assets.v60GalleryBack];
+      case Assets.ipodFront:
+        return const [
+          Assets.ipodFront,
+          Assets.ipodGallerySide,
+          Assets.ipodGalleryBack,
+        ];
+      case Assets.discmanHome:
+        return const [
+          Assets.discmanHome,
+          Assets.discmanGallerySide,
+          Assets.discmanGalleryBack,
+        ];
+      case Assets.walkman:
+        return const [
+          Assets.walkman,
+          Assets.walkmanGallerySide,
+          Assets.walkmanGalleryBack,
+        ];
+      case Assets.minidisc:
+        return const [
+          Assets.minidisc,
+          Assets.minidiscGallerySide,
+          Assets.minidiscGalleryBack,
+        ];
+      case Assets.gameboy:
+        return const [
+          Assets.gameboy,
+          Assets.gameboyGallerySide,
+          Assets.gameboyGalleryBack,
+        ];
+      case Assets.camera:
+        return const [
+          Assets.camera,
+          Assets.cameraGallerySide,
+          Assets.cameraGalleryBack,
+        ];
+      case Assets.imac:
+        return const [
+          Assets.imac,
+          Assets.imacGallerySide,
+          Assets.imacGalleryBack,
+        ];
+      case Assets.palm:
+        return const [
+          Assets.palm,
+          Assets.palmGallerySide,
+          Assets.palmGalleryBack,
+        ];
+      case Assets.watch:
+        return const [
+          Assets.watch,
+          Assets.watchGallerySide,
+          Assets.watchGalleryBack,
+        ];
+    }
+    return [imageAsset];
+  }
 
   Listing copyWith({
     String? id,
