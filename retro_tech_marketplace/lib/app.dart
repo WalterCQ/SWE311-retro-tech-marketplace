@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'store/listing_store.dart';
 import 'constants/theme.dart';
 import 'models/listing.dart';
+import 'services/update_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/registration_screen.dart';
 import 'screens/shell/main_shell.dart';
@@ -18,6 +20,7 @@ import 'screens/settings/chat_thread_screen.dart';
 import 'screens/settings/help_support_screen.dart';
 import 'screens/settings/about_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'widgets/update_prompt.dart';
 
 class RetroTechApp extends StatefulWidget {
   const RetroTechApp({super.key, required this.store});
@@ -30,6 +33,17 @@ class RetroTechApp extends StatefulWidget {
 
 class _RetroTechAppState extends State<RetroTechApp> {
   late final Future<void> _loadFuture = widget.store.load();
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    if (kReleaseMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForUpdatesAfterLaunch();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +54,7 @@ class _RetroTechAppState extends State<RetroTechApp> {
           title: 'RetroTech',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.theme,
+          navigatorKey: _navigatorKey,
           initialRoute: '/login',
           onGenerateRoute: _route,
         );
@@ -155,6 +170,17 @@ class _RetroTechAppState extends State<RetroTechApp> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _checkForUpdatesAfterLaunch() async {
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    final context = _navigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    await checkForAppUpdate(
+      context,
+      service: const UpdateService(),
+      userInitiated: false,
     );
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../constants/theme.dart';
+import '../../services/update_service.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
+import '../../widgets/update_prompt.dart';
 import '../profile/edit_profile_screen.dart';
 import 'help_support_screen.dart';
 
@@ -17,6 +19,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool notifications = true;
   bool privacy = true;
+  bool checkingUpdates = false;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +99,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 openPage: const HelpSupportScreen(),
                 routeSettings: const RouteSettings(name: '/help'),
               ),
+              _SettingsRow(
+                Icons.system_update_alt_rounded,
+                'App Update',
+                value: checkingUpdates
+                    ? 'Checking...'
+                    : 'v${UpdateService.fallbackVersion}',
+                onTap: _checkForUpdates,
+              ),
             ],
           ),
           SizedBox(height: 28),
@@ -122,6 +133,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+
+  Future<void> _checkForUpdates() async {
+    if (checkingUpdates) return;
+    setState(() => checkingUpdates = true);
+    await checkForAppUpdate(
+      context,
+      service: const UpdateService(),
+      userInitiated: true,
+    );
+    if (!mounted) return;
+    setState(() => checkingUpdates = false);
+  }
 }
 
 class _SettingsRow extends StatelessWidget {
@@ -131,6 +154,7 @@ class _SettingsRow extends StatelessWidget {
     this.value,
     this.openPage,
     this.routeSettings,
+    this.onTap,
   });
 
   final IconData icon;
@@ -138,6 +162,7 @@ class _SettingsRow extends StatelessWidget {
   final String? value;
   final Widget? openPage;
   final RouteSettings? routeSettings;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +176,7 @@ class _SettingsRow extends StatelessWidget {
         routeSettings: routeSettings,
       );
     }
-    return GlassListRow(icon: icon, title: label, value: value);
+    return GlassListRow(icon: icon, title: label, value: value, onTap: onTap);
   }
 }
 

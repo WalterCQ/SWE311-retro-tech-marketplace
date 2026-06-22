@@ -7,11 +7,18 @@ import 'package:retro_tech_marketplace/constants/theme.dart';
 import 'package:retro_tech_marketplace/screens/settings/help_support_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/chat_thread_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/product_detail_screen.dart';
+import 'package:retro_tech_marketplace/services/update_service.dart';
 import 'package:retro_tech_marketplace/widgets/glass_scaffold.dart';
 import 'package:retro_tech_marketplace/screens/home/categories_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/about_screen.dart';
 
 void main() {
+  test('release version comparison handles tags and build suffixes', () {
+    expect(compareVersionNames('v1.0.5', '1.0.4+5'), greaterThan(0));
+    expect(compareVersionNames('1.0.4', 'v1.0.4+5'), 0);
+    expect(compareVersionNames('v1.0.3', '1.0.4'), lessThan(0));
+  });
+
   void setPhoneSize(WidgetTester tester, [Size size = const Size(390, 844)]) {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
