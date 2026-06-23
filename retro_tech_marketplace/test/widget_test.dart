@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retro_tech_marketplace/app.dart';
 import 'package:retro_tech_marketplace/constants/assets.dart';
+import 'package:retro_tech_marketplace/models/listing.dart';
 import 'package:retro_tech_marketplace/store/listing_store.dart';
 import 'package:retro_tech_marketplace/store/seed_data.dart';
 import 'package:retro_tech_marketplace/constants/theme.dart';
 import 'package:retro_tech_marketplace/screens/settings/help_support_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/chat_thread_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/product_detail_screen.dart';
+import 'package:retro_tech_marketplace/screens/product/multimedia_screen.dart';
 import 'package:retro_tech_marketplace/services/update_service.dart';
 import 'package:retro_tech_marketplace/widgets/glass_scaffold.dart';
 import 'package:retro_tech_marketplace/screens/home/categories_screen.dart';
@@ -54,6 +56,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Log In'));
     await tester.pumpAndSettle();
+  }
+
+  ProductDetailScreen detailScreenForTest(Listing listing) {
+    return ProductDetailScreen(
+      store: ListingStore(),
+      listing: listing,
+      videoPlayerBuilder: (_) => FakeMultimediaPlayer(),
+    );
   }
 
   testWidgets('RetroTech app smoke test', (WidgetTester tester) async {
@@ -144,10 +154,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.theme,
-        home: ProductDetailScreen(
-          store: ListingStore(),
-          listing: seedListings.first,
-        ),
+        home: detailScreenForTest(seedListings.first),
       ),
     );
     await tester.pumpAndSettle();
@@ -166,10 +173,7 @@ void main() {
     setPhoneSize(tester);
     final ipod = seedListings.firstWhere((item) => item.id == 'ipod-classic');
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.theme,
-        home: ProductDetailScreen(store: ListingStore(), listing: ipod),
-      ),
+      MaterialApp(theme: AppTheme.theme, home: detailScreenForTest(ipod)),
     );
     await tester.pumpAndSettle();
 
@@ -180,6 +184,7 @@ void main() {
     expect(find.byKey(const ValueKey('product-gallery-dot-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('product-gallery-dot-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('product-gallery-dot-2')), findsOneWidget);
+    expect(find.byKey(const ValueKey('product-gallery-dot-3')), findsOneWidget);
     expect(find.text('Contact Seller'), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('product-gallery-dot-0'))).width,
@@ -204,6 +209,127 @@ void main() {
       tester.getSize(find.byKey(const ValueKey('product-gallery-dot-2'))).width,
       20,
     );
+  });
+
+  testWidgets('product detail starts gallery with playable product video', (
+    WidgetTester tester,
+  ) async {
+    setPhoneSize(tester);
+    final player = FakeMultimediaPlayer();
+    final ipod = seedListings.firstWhere((item) => item.id == 'ipod-classic');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: ProductDetailScreen(
+          store: ListingStore(),
+          listing: ipod,
+          videoPlayerBuilder: (_) => player,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('product-gallery-video-toggle')),
+      findsOneWidget,
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('product-gallery-dot-0'))).width,
+      20,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('product-gallery-video-toggle')),
+    );
+    await tester.pumpAndSettle();
+    expect(player.isPlaying, isTrue);
+
+    await tester.tap(
+      find.byKey(const ValueKey('product-gallery-video-sound-toggle')),
+    );
+    await tester.pumpAndSettle();
+    expect(player.isMuted, isTrue);
+    expect(player.isPlaying, isTrue);
+
+    await tester.tap(
+      find.byKey(const ValueKey('product-gallery-video-sound-toggle')),
+    );
+    await tester.pumpAndSettle();
+    expect(player.isMuted, isFalse);
+    expect(player.isPlaying, isTrue);
+
+    await tester.tap(
+      find.byKey(const ValueKey('product-gallery-video-toggle')),
+    );
+    await tester.pumpAndSettle();
+    expect(player.isPlaying, isFalse);
+  });
+
+  testWidgets('product detail opens multimedia preview from demo entry', (
+    WidgetTester tester,
+  ) async {
+    setPhoneSize(tester);
+    final fakeMultimediaPlayer = FakeMultimediaPlayer();
+    final ipod = seedListings.firstWhere((item) => item.id == 'ipod-classic');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: detailScreenForTest(ipod),
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => MultimediaScreen(
+              listing: settings.arguments as Listing?,
+              player: fakeMultimediaPlayer,
+            ),
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView), const Offset(0, -520));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('product-multimedia-entry')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Media Preview'), findsOneWidget);
+    expect(find.text('Paused product demo'), findsOneWidget);
+  });
+
+  testWidgets('multimedia play pause button toggles playback state', (
+    WidgetTester tester,
+  ) async {
+    setPhoneSize(tester);
+    final player = FakeMultimediaPlayer();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: MultimediaScreen(listing: seedListings.first, player: player),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Paused product demo'), findsOneWidget);
+    expect(find.text('Play Demo'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('multimedia-play-pause-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(player.isPlaying, isTrue);
+    expect(find.text('Playing product demo'), findsOneWidget);
+    expect(find.text('Pause Demo'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('multimedia-play-pause-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(player.isPlaying, isFalse);
+    expect(find.text('Paused product demo'), findsOneWidget);
+    expect(find.text('Play Demo'), findsOneWidget);
   });
 
   testWidgets('key screens fit common phone widths', (
@@ -236,6 +362,7 @@ void main() {
           home: ProductDetailScreen(
             store: ListingStore(),
             listing: seedListings.first,
+            videoPlayerBuilder: (_) => FakeMultimediaPlayer(),
           ),
         ),
       );
@@ -243,4 +370,56 @@ void main() {
       expect(find.text('Contact Seller'), findsOneWidget);
     }
   });
+}
+
+class FakeMultimediaPlayer implements MultimediaPlayer {
+  bool _initialized = false;
+  bool _playing = false;
+  bool _muted = false;
+  bool _disposed = false;
+
+  @override
+  Future<void> initialize() async {
+    _initialized = true;
+  }
+
+  @override
+  Future<void> play() async {
+    _playing = true;
+  }
+
+  @override
+  Future<void> pause() async {
+    _playing = false;
+  }
+
+  @override
+  Future<void> setMuted(bool muted) async {
+    _muted = muted;
+  }
+
+  @override
+  Widget buildView() {
+    return const ColoredBox(
+      key: ValueKey('fake-multimedia-video'),
+      color: Colors.black,
+    );
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+  }
+
+  @override
+  bool get isInitialized => _initialized && !_disposed;
+
+  @override
+  bool get isPlaying => _playing;
+
+  @override
+  bool get isMuted => _muted;
+
+  @override
+  double get aspectRatio => 16 / 9;
 }

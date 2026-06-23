@@ -11,6 +11,7 @@ import 'screens/product/product_detail_screen.dart';
 import 'screens/product/category_detail_screen.dart';
 import 'screens/product/my_listings_screen.dart';
 import 'screens/product/listing_form_screen.dart';
+import 'screens/product/multimedia_screen.dart';
 import 'screens/checkout/checkout_screen.dart';
 import 'screens/checkout/order_confirmation_screen.dart';
 import 'screens/profile/seller_profile_screen.dart';
@@ -79,6 +80,9 @@ class _RetroTechAppState extends State<RetroTechApp> {
           store: widget.store,
           listing: settings.arguments as Listing?,
         );
+        break;
+      case '/multimedia':
+        page = MultimediaScreen(listing: settings.arguments as Listing?);
         break;
       case '/category':
         page = CategoryDetailScreen(

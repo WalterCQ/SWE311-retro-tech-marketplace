@@ -51,4 +51,8 @@ class Assets {
   static const avatarVintage = 'assets/images/avatar-vintageaudio.png';
   static const avatarPalm = 'assets/images/avatar-palmpilot.png';
   static const avatarPixel = 'assets/images/avatar-pixelcam.png';
+  static const ipodDemoVideo = 'assets/videos/ipod-demo.mp4';
+  static const motorolaV60Video = 'assets/videos/motorola-v60.mp4';
+  static const ipodClassicVideo = 'assets/videos/ipod-classic.mp4';
+  static const sonyDiscmanVideo = 'assets/videos/sony-discman.mp4';
 }

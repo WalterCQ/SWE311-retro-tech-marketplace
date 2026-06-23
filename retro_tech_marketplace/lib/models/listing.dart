@@ -39,6 +39,18 @@ class Listing {
 
   String get priceLabel => 'RM ${price.toStringAsFixed(2)}';
   String get shortTitle => subtitle.isEmpty ? title : '$title\n$subtitle';
+  String? get detailVideoAsset {
+    switch (id) {
+      case 'motorola-v60':
+        return Assets.motorolaV60Video;
+      case 'ipod-classic':
+        return Assets.ipodClassicVideo;
+      case 'sony-discman':
+        return Assets.sonyDiscmanVideo;
+    }
+    return null;
+  }
+
   List<String> get detailImageAssets {
     switch (imageAsset) {
       case Assets.v60:

@@ -10,12 +10,21 @@ import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
 import '../home/home_screen.dart';
+import 'multimedia_screen.dart';
+
+typedef ProductVideoPlayerBuilder = MultimediaPlayer Function(String asset);
 
 class ProductDetailScreen extends StatelessWidget {
-  const ProductDetailScreen({super.key, required this.store, this.listing});
+  const ProductDetailScreen({
+    super.key,
+    required this.store,
+    this.listing,
+    this.videoPlayerBuilder,
+  });
 
   final ListingStore store;
   final Listing? listing;
+  final ProductVideoPlayerBuilder? videoPlayerBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +76,7 @@ class ProductDetailScreen extends StatelessWidget {
                       item: item,
                       height: metrics.detailImageHeight,
                       width: constraints.maxWidth - metrics.pagePadding * 2,
+                      videoPlayerBuilder: videoPlayerBuilder,
                     ),
                     SizedBox(height: metrics.compact ? 14 : 20),
                     ProductDetailPanel(item: item),
@@ -99,11 +109,13 @@ class ProductGallery extends StatefulWidget {
     required this.item,
     required this.height,
     required this.width,
+    this.videoPlayerBuilder,
   });
 
   final Listing item;
   final double height;
   final double width;
+  final ProductVideoPlayerBuilder? videoPlayerBuilder;
 
   @override
   State<ProductGallery> createState() => _ProductGalleryState();
@@ -122,8 +134,8 @@ class _ProductGalleryState extends State<ProductGallery> {
   @override
   void didUpdateWidget(ProductGallery oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final imageCount = widget.item.detailImageAssets.length;
-    if (_activeIndex >= imageCount) {
+    final itemCount = _galleryItemCount(widget.item);
+    if (_activeIndex >= itemCount) {
       _activeIndex = 0;
       _controller.jumpToPage(0);
     }
@@ -138,6 +150,9 @@ class _ProductGalleryState extends State<ProductGallery> {
   @override
   Widget build(BuildContext context) {
     final images = widget.item.detailImageAssets;
+    final videoAsset = widget.item.detailVideoAsset;
+    final hasVideo = videoAsset != null;
+    final itemCount = _galleryItemCount(widget.item);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -149,13 +164,23 @@ class _ProductGalleryState extends State<ProductGallery> {
               key: const ValueKey('product-gallery-page-view'),
               controller: _controller,
               physics: const BouncingScrollPhysics(),
-              itemCount: images.length,
+              itemCount: itemCount,
               onPageChanged: (index) => setState(() => _activeIndex = index),
               itemBuilder: (context, index) {
+                if (hasVideo && index == 0) {
+                  return ProductGalleryVideo(
+                    asset: videoAsset,
+                    width: widget.width,
+                    height: widget.height,
+                    active: _activeIndex == index,
+                    player: widget.videoPlayerBuilder?.call(videoAsset),
+                  );
+                }
+                final imageIndex = hasVideo ? index - 1 : index;
                 return FittedBox(
                   fit: BoxFit.contain,
                   child: ProductImage(
-                    asset: images[index],
+                    asset: images[imageIndex],
                     width: 316,
                     height: 413,
                     heroTag: index == _activeIndex
@@ -170,7 +195,7 @@ class _ProductGalleryState extends State<ProductGallery> {
         SizedBox(height: ResponsiveMetrics.of(context).compact ? 8 : 14),
         Center(
           child: Dots(
-            count: images.length,
+            count: itemCount,
             activeIndex: _activeIndex,
             keyPrefix: 'product-gallery',
             onSelected: (index) => _controller.animateToPage(
@@ -181,6 +206,222 @@ class _ProductGalleryState extends State<ProductGallery> {
           ),
         ),
       ],
+    );
+  }
+
+  int _galleryItemCount(Listing item) {
+    return item.detailImageAssets.length +
+        (item.detailVideoAsset == null ? 0 : 1);
+  }
+}
+
+class ProductGalleryVideo extends StatefulWidget {
+  const ProductGalleryVideo({
+    super.key,
+    required this.asset,
+    required this.width,
+    required this.height,
+    required this.active,
+    this.player,
+  });
+
+  final String asset;
+  final double width;
+  final double height;
+  final bool active;
+  final MultimediaPlayer? player;
+
+  @override
+  State<ProductGalleryVideo> createState() => _ProductGalleryVideoState();
+}
+
+class _ProductGalleryVideoState extends State<ProductGalleryVideo> {
+  late final MultimediaPlayer _player =
+      widget.player ?? AssetMultimediaPlayer(widget.asset);
+  late final Future<void> _initializeFuture = _player.initialize();
+
+  @override
+  void didUpdateWidget(ProductGalleryVideo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.active && _player.isPlaying) {
+      _pause();
+    }
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pause() async {
+    await _player.pause();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _togglePlayback() async {
+    if (!_player.isInitialized) return;
+    if (_player.isPlaying) {
+      await _player.pause();
+    } else {
+      await _player.play();
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleMuted() async {
+    if (!_player.isInitialized) return;
+    await _player.setMuted(!_player.isMuted);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: FutureBuilder<void>(
+        future: _initializeFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return _buildFrame(
+              context,
+              aspectRatio: 16 / 9,
+              child: const Center(child: CircularProgressIndicator.adaptive()),
+            );
+          }
+          if (snapshot.hasError || !_player.isInitialized) {
+            return _buildFrame(
+              context,
+              aspectRatio: 16 / 9,
+              child: Center(
+                child: Text(
+                  'Video unavailable',
+                  style: AppTheme.body.copyWith(color: Colors.white),
+                ),
+              ),
+            );
+          }
+          final playing = _player.isPlaying;
+          return Semantics(
+            button: true,
+            label: playing ? 'Pause product video' : 'Play product video',
+            child: GestureDetector(
+              key: const ValueKey('product-gallery-video-toggle'),
+              behavior: HitTestBehavior.opaque,
+              onTap: _togglePlayback,
+              child: _buildFrame(
+                context,
+                aspectRatio: _player.aspectRatio,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _player.buildView(),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.26),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: AnimatedOpacity(
+                        opacity: playing ? 0 : 1,
+                        duration: const Duration(milliseconds: 180),
+                        child: _VideoControlIcon(
+                          icon: Icons.play_arrow_rounded,
+                          size: 68,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: Semantics(
+                        button: true,
+                        label: _player.isMuted ? 'Turn sound on' : 'Mute video',
+                        child: GestureDetector(
+                          key: const ValueKey(
+                            'product-gallery-video-sound-toggle',
+                          ),
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _toggleMuted,
+                          child: _VideoControlIcon(
+                            icon: _player.isMuted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            size: 42,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFrame(
+    BuildContext context, {
+    required double aspectRatio,
+    required Widget child,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var width = constraints.maxWidth;
+        var height = width / aspectRatio;
+        if (height > constraints.maxHeight) {
+          height = constraints.maxHeight;
+          width = height * aspectRatio;
+        }
+        return Center(
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: ColoredBox(color: AppTheme.ink, child: child),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _VideoControlIcon extends StatelessWidget {
+  const _VideoControlIcon({required this.icon, required this.size});
+
+  final IconData icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.86),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.92)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.ink.withValues(alpha: 0.16),
+            offset: Offset(0, 10),
+            blurRadius: 22,
+          ),
+        ],
+      ),
+      child: Icon(icon, color: AppTheme.blue, size: size * 0.52),
     );
   }
 }
@@ -297,6 +538,8 @@ class ProductDetailPanel extends StatelessWidget {
             },
           ),
           SizedBox(height: metrics.compact ? 18 : 22),
+          MultimediaPreviewTile(item: item),
+          SizedBox(height: metrics.compact ? 18 : 22),
           Divider(height: 1, color: AppTheme.line),
           SizedBox(height: metrics.compact ? 16 : 18),
           Text('Seller', style: AppTheme.h2.copyWith(fontSize: 15)),
@@ -335,6 +578,69 @@ class ProductDetailPanel extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class MultimediaPreviewTile extends StatelessWidget {
+  const MultimediaPreviewTile({super.key, required this.item});
+
+  final Listing item;
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = ResponsiveMetrics.of(context);
+    return LiquidPressable(
+      onTap: () => Navigator.pushNamed(context, '/multimedia', arguments: item),
+      borderRadius: BorderRadius.circular(22),
+      glowColor: AppTheme.blue,
+      child: GlassCard(
+        key: const ValueKey('product-multimedia-entry'),
+        padding: EdgeInsets.all(metrics.compact ? 12 : 14),
+        radius: 22,
+        opacity: 0.5,
+        blur: 12,
+        child: Row(
+          children: [
+            Container(
+              width: metrics.compact ? 40 : 44,
+              height: metrics.compact ? 40 : 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.blue.withValues(alpha: 0.1),
+              ),
+              child: Icon(
+                Icons.play_arrow_rounded,
+                color: AppTheme.blue,
+                size: metrics.compact ? 25 : 28,
+              ),
+            ),
+            SizedBox(width: metrics.gutter),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Product Demo',
+                    style: AppTheme.h2.copyWith(fontSize: 15),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Watch and pause the media preview',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTheme.body.copyWith(fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8),
+            Text('Watch', style: AppTheme.label),
+            SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded, color: AppTheme.muted, size: 22),
+          ],
+        ),
       ),
     );
   }
