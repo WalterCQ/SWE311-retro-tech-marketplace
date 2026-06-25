@@ -1,0 +1,4 @@
+storePassword=replace-with-your-store-password
+keyPassword=replace-with-your-key-password
+keyAlias=retro-tech-release
+storeFile=app/upload-keystore.jks

@@ -34,6 +34,47 @@ void main() {
     expect(compareVersionNames('v1.0.3', '1.0.4'), lessThan(0));
   });
 
+  test('release parser selects the first APK asset download URL', () {
+    final release = <String, Object?>{
+      'assets': [
+        {
+          'name': 'release-notes.txt',
+          'browser_download_url':
+              'https://github.com/WalterCQ/example/releases/download/v1.1.1/release-notes.txt',
+        },
+        {
+          'name': 'retro-tech-marketplace.apk',
+          'browser_download_url':
+              'https://github.com/WalterCQ/example/releases/download/v1.1.1/retro-tech-marketplace.apk',
+        },
+        {
+          'name': 'retro-tech-marketplace-arm64.apk',
+          'browser_download_url':
+              'https://github.com/WalterCQ/example/releases/download/v1.1.1/retro-tech-marketplace-arm64.apk',
+        },
+      ],
+    };
+
+    expect(
+      selectApkDownloadUrlFromRelease(release),
+      'https://github.com/WalterCQ/example/releases/download/v1.1.1/retro-tech-marketplace.apk',
+    );
+  });
+
+  test('release parser returns null when no APK asset is available', () {
+    final release = <String, Object?>{
+      'assets': [
+        {
+          'name': 'ios-unsigned.zip',
+          'browser_download_url':
+              'https://github.com/WalterCQ/example/releases/download/v1.1.1/ios-unsigned.zip',
+        },
+      ],
+    };
+
+    expect(selectApkDownloadUrlFromRelease(release), isNull);
+  });
+
   test(
     'product galleries keep original first image and expose three images',
     () {

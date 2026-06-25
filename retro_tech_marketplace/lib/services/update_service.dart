@@ -10,12 +10,14 @@ class AppUpdateInfo {
     required this.latestVersion,
     required this.tagName,
     required this.releaseUrl,
+    required this.apkDownloadUrl,
   });
 
   final String currentVersion;
   final String latestVersion;
   final String tagName;
   final String releaseUrl;
+  final String? apkDownloadUrl;
 
   bool get updateAvailable =>
       compareVersionNames(latestVersion, currentVersion) > 0;
@@ -24,7 +26,7 @@ class AppUpdateInfo {
 class UpdateService {
   const UpdateService();
 
-  static const fallbackVersion = '1.0.5';
+  static const fallbackVersion = '1.1.1';
   static const repository = 'WalterCQ/swe311-mobile-application-system-design';
   static const releasePageUrl =
       'https://github.com/$repository/releases/latest';
@@ -43,20 +45,52 @@ class UpdateService {
       latestVersion: _normalizeVersion(release.tagName),
       tagName: release.tagName,
       releaseUrl: release.releaseUrl,
+      apkDownloadUrl: release.apkDownloadUrl,
     );
   }
 
-  Future<bool> openReleasePage(String url) async {
-    try {
-      final opened = await _channel.invokeMethod<bool>('openUrl', {'url': url});
-      if (opened == true) return true;
-    } on MissingPluginException {
-      // Fall back to copying the link on platforms without the native channel.
-    } on PlatformException {
-      // The caller only needs a usable download path, so copy the link below.
+  Future<void> downloadAndInstallUpdate(
+    AppUpdateInfo update, {
+    UpdateDownloadProgress? onProgress,
+  }) async {
+    if (!Platform.isAndroid) {
+      throw const UpdateInstallException(
+        'In-app installation is only available on Android.',
+      );
     }
-    await Clipboard.setData(ClipboardData(text: url));
-    return false;
+
+    final apkDownloadUrl = update.apkDownloadUrl;
+    final apkUri = apkDownloadUrl == null ? null : Uri.tryParse(apkDownloadUrl);
+    if (apkUri == null || !apkUri.hasScheme) {
+      throw const UpdateInstallException(
+        'No APK download was found for this release.',
+      );
+    }
+
+    final apkFile = await _downloadApk(apkUri, update, onProgress: onProgress);
+    try {
+      final opened = await _channel.invokeMethod<bool>('installApk', {
+        'filePath': apkFile.path,
+      });
+      if (opened != true) {
+        throw const UpdateInstallException(
+          'Could not open the Android installer.',
+        );
+      }
+    } on MissingPluginException {
+      throw const UpdateInstallException(
+        'In-app installation is only available on Android.',
+      );
+    } on PlatformException catch (error) {
+      if (error.code == 'unknown_sources_disabled') {
+        throw const UpdateInstallException(
+          'Allow installs from this app in Android settings, then retry.',
+        );
+      }
+      throw const UpdateInstallException(
+        'Could not open the Android installer.',
+      );
+    }
   }
 
   Future<String> _currentVersionName() async {
@@ -105,7 +139,11 @@ class UpdateService {
         throw const UpdateCheckException();
       }
 
-      return _ReleaseMetadata(tagName: tagName, releaseUrl: releaseUrl);
+      return _ReleaseMetadata(
+        tagName: tagName,
+        releaseUrl: releaseUrl,
+        apkDownloadUrl: selectApkDownloadUrlFromRelease(decoded),
+      );
     } on TimeoutException {
       throw const UpdateCheckException();
     } on FormatException {
@@ -116,17 +154,140 @@ class UpdateService {
       client.close(force: true);
     }
   }
+
+  Future<File> _downloadApk(
+    Uri apkUri,
+    AppUpdateInfo update, {
+    UpdateDownloadProgress? onProgress,
+  }) async {
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
+    IOSink? sink;
+    try {
+      final request = await client
+          .getUrl(apkUri)
+          .timeout(const Duration(seconds: 15));
+      request.headers.set(HttpHeaders.userAgentHeader, 'RetroTechMarketplace');
+
+      final response = await request.close().timeout(
+        const Duration(seconds: 20),
+      );
+      if (response.statusCode < HttpStatus.ok ||
+          response.statusCode >= HttpStatus.multipleChoices) {
+        throw const UpdateInstallException(
+          'Update download failed. Try again later.',
+        );
+      }
+
+      final cacheDirectory = Directory(await _updateCacheDirectoryPath());
+      if (!await cacheDirectory.exists()) {
+        await cacheDirectory.create(recursive: true);
+      }
+
+      final apkFile = File(
+        '${cacheDirectory.path}/retro_tech_update_${_safeFileNamePart(update.tagName)}.apk',
+      );
+      sink = apkFile.openWrite();
+
+      final totalBytes = response.contentLength > 0
+          ? response.contentLength
+          : null;
+      var downloadedBytes = 0;
+      onProgress?.call(totalBytes == null ? null : 0);
+
+      await for (final chunk in response.timeout(const Duration(seconds: 30))) {
+        downloadedBytes += chunk.length;
+        sink.add(chunk);
+        if (totalBytes != null) {
+          onProgress?.call(downloadedBytes / totalBytes);
+        }
+      }
+
+      await sink.close();
+      sink = null;
+
+      if (!await apkFile.exists() || await apkFile.length() == 0) {
+        throw const UpdateInstallException(
+          'Update download failed. Try again later.',
+        );
+      }
+
+      onProgress?.call(1);
+      return apkFile;
+    } on UpdateInstallException {
+      rethrow;
+    } on TimeoutException {
+      throw const UpdateInstallException(
+        'Update download timed out. Try again later.',
+      );
+    } on IOException {
+      throw const UpdateInstallException(
+        'Update download failed. Try again later.',
+      );
+    } finally {
+      await sink?.close();
+      client.close(force: true);
+    }
+  }
+
+  Future<String> _updateCacheDirectoryPath() async {
+    try {
+      final path = await _channel.invokeMethod<String>('getUpdateCacheDir');
+      if (path != null && path.trim().isNotEmpty) {
+        return path;
+      }
+    } on MissingPluginException {
+      // Tests and non-Android shells can use Dart's temporary directory.
+    } on PlatformException {
+      // Fall back to Dart's temporary directory if native cache lookup fails.
+    }
+    return Directory.systemTemp.path;
+  }
 }
 
 class UpdateCheckException implements Exception {
   const UpdateCheckException();
 }
 
+class UpdateInstallException implements Exception {
+  const UpdateInstallException(this.message);
+
+  final String message;
+}
+
+typedef UpdateDownloadProgress = void Function(double? progress);
+
 class _ReleaseMetadata {
-  const _ReleaseMetadata({required this.tagName, required this.releaseUrl});
+  const _ReleaseMetadata({
+    required this.tagName,
+    required this.releaseUrl,
+    required this.apkDownloadUrl,
+  });
 
   final String tagName;
   final String releaseUrl;
+  final String? apkDownloadUrl;
+}
+
+String? selectApkDownloadUrlFromRelease(Map<String, Object?> release) {
+  final assets = release['assets'];
+  if (assets is! List) return null;
+
+  for (final asset in assets) {
+    if (asset is! Map) continue;
+
+    final name = asset['name']?.toString().trim().toLowerCase() ?? '';
+    final downloadUrl = asset['browser_download_url']?.toString().trim() ?? '';
+    if (downloadUrl.isEmpty) continue;
+
+    final parsedUrl = Uri.tryParse(downloadUrl);
+    final urlPath = parsedUrl?.path.toLowerCase() ?? downloadUrl.toLowerCase();
+    if (name.endsWith('.apk') || urlPath.endsWith('.apk')) {
+      return downloadUrl;
+    }
+  }
+
+  return null;
 }
 
 int compareVersionNames(String left, String right) {
@@ -158,4 +319,9 @@ List<int> _versionParts(String value) {
   return _normalizeVersion(
     value,
   ).split('.').map((part) => int.tryParse(part) ?? 0).toList(growable: false);
+}
+
+String _safeFileNamePart(String value) {
+  final safe = value.trim().replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '_');
+  return safe.isEmpty ? 'latest' : safe;
 }
