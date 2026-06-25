@@ -4,12 +4,29 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/liquid_button.dart';
 
-class HelpSupportScreen extends StatelessWidget {
+class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
+
+  @override
+  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+}
+
+class _HelpSupportScreenState extends State<HelpSupportScreen> {
+  String _filter = 'Orders';
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
     final metrics = ResponsiveMetrics.of(context);
+    final query = _query.trim().toLowerCase();
+    final faqs = _helpTopics.where((topic) {
+      final matchesFilter = topic.category == _filter;
+      final matchesQuery =
+          query.isEmpty ||
+          topic.title.toLowerCase().contains(query) ||
+          topic.body.toLowerCase().contains(query);
+      return matchesFilter && matchesQuery;
+    }).toList();
     return GlassScaffold(
       child: Stack(
         children: [
@@ -38,44 +55,52 @@ class HelpSupportScreen extends StatelessWidget {
               Text('How can we help?', style: AppTheme.h1),
               SizedBox(height: 18),
               GlassCard(
-                height: 46,
+                height: 52,
                 radius: 23,
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Icon(Icons.search_rounded, color: AppTheme.muted, size: 18),
-                    SizedBox(width: 10),
-                    Text('Search help topics', style: AppTheme.body),
-                  ],
+                child: TextField(
+                  key: const ValueKey('help-search-field'),
+                  onChanged: (value) => setState(() => _query = value),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.ink,
+                  ),
+                  decoration: InputDecoration(
+                    icon: Icon(
+                      Icons.search_rounded,
+                      color: AppTheme.muted,
+                      size: 18,
+                    ),
+                    hintText: 'Search help topics',
+                    hintStyle: AppTheme.body,
+                    border: InputBorder.none,
+                  ),
                 ),
               ),
               SizedBox(height: 18),
               Wrap(
                 runSpacing: 8,
                 children: [
-                  FilterPill('Orders', true),
-                  FilterPill('Selling', false),
-                  FilterPill('Payments', false),
-                  FilterPill('Safety', false),
+                  for (final label in const [
+                    'Orders',
+                    'Selling',
+                    'Payments',
+                    'Safety',
+                  ])
+                    FilterPill(
+                      label,
+                      _filter == label,
+                      onTap: () => setState(() => _filter = label),
+                    ),
                 ],
               ),
               SizedBox(height: 18),
-              FaqTile(
-                'How do I contact a seller?',
-                'Message sellers securely from any product page.',
-              ),
-              FaqTile(
-                'How do I create a listing?',
-                'Add product details, photos, and price in minutes.',
-              ),
-              FaqTile(
-                'How are payments protected?',
-                'Protected checkout helps keep transactions safe.',
-              ),
-              FaqTile(
-                'How do I report a fake item?',
-                'Flag suspicious listings and our team will review them.',
-              ),
+              if (faqs.isEmpty)
+                GlassCard(
+                  child: Text('No help topics found.', style: AppTheme.body),
+                )
+              else
+                ...faqs.map((topic) => FaqTile(topic.title, topic.body)),
             ],
           ),
           Positioned(
@@ -93,6 +118,42 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 }
+
+class _HelpTopic {
+  const _HelpTopic(this.category, this.title, this.body);
+
+  final String category;
+  final String title;
+  final String body;
+}
+
+const _helpTopics = [
+  _HelpTopic(
+    'Orders',
+    'How do I contact a seller?',
+    'Message sellers securely from any product page.',
+  ),
+  _HelpTopic(
+    'Orders',
+    'How do I track an order?',
+    'Open Orders from your profile and tap Track Order after payment.',
+  ),
+  _HelpTopic(
+    'Selling',
+    'How do I create a listing?',
+    'Add product details, photos, and price in minutes.',
+  ),
+  _HelpTopic(
+    'Payments',
+    'How are payments protected?',
+    'Protected checkout helps keep transactions safe.',
+  ),
+  _HelpTopic(
+    'Safety',
+    'How do I report a fake item?',
+    'Flag suspicious listings and our team will review them.',
+  ),
+];
 
 class FaqTile extends StatefulWidget {
   const FaqTile(this.title, this.body, {super.key});

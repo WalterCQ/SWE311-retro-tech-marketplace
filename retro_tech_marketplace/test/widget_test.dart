@@ -2,18 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retro_tech_marketplace/app.dart';
 import 'package:retro_tech_marketplace/constants/assets.dart';
+import 'package:retro_tech_marketplace/data/listing_repository.dart';
 import 'package:retro_tech_marketplace/models/listing.dart';
+import 'package:retro_tech_marketplace/models/order_record.dart';
+import 'package:retro_tech_marketplace/models/user_profile.dart';
 import 'package:retro_tech_marketplace/store/listing_store.dart';
 import 'package:retro_tech_marketplace/store/seed_data.dart';
 import 'package:retro_tech_marketplace/constants/theme.dart';
 import 'package:retro_tech_marketplace/screens/settings/help_support_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/chat_thread_screen.dart';
+import 'package:retro_tech_marketplace/screens/settings/settings_screen.dart';
+import 'package:retro_tech_marketplace/screens/checkout/checkout_screen.dart';
+import 'package:retro_tech_marketplace/screens/checkout/order_confirmation_screen.dart';
+import 'package:retro_tech_marketplace/screens/product/category_detail_screen.dart';
+import 'package:retro_tech_marketplace/screens/product/my_listings_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/product_detail_screen.dart';
-import 'package:retro_tech_marketplace/screens/product/multimedia_screen.dart';
+import 'package:retro_tech_marketplace/screens/product/product_video_player.dart';
+import 'package:retro_tech_marketplace/screens/profile/account_profile_screen.dart';
+import 'package:retro_tech_marketplace/screens/profile/payment_methods_screen.dart';
+import 'package:retro_tech_marketplace/screens/profile/seller_profile_screen.dart';
 import 'package:retro_tech_marketplace/services/update_service.dart';
 import 'package:retro_tech_marketplace/widgets/glass_scaffold.dart';
 import 'package:retro_tech_marketplace/screens/home/categories_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/about_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('release version comparison handles tags and build suffixes', () {
@@ -46,8 +58,9 @@ void main() {
   }
 
   Future<void> pumpRetroTech(WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
     setPhoneSize(tester);
-    await tester.pumpWidget(RetroTechApp(store: ListingStore()));
+    await tester.pumpWidget(RetroTechApp(store: testStore()));
     await tester.pumpAndSettle();
   }
 
@@ -60,7 +73,7 @@ void main() {
 
   ProductDetailScreen detailScreenForTest(Listing listing) {
     return ProductDetailScreen(
-      store: ListingStore(),
+      store: testStore(),
       listing: listing,
       videoPlayerBuilder: (_) => FakeMultimediaPlayer(),
     );
@@ -167,6 +180,212 @@ void main() {
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
   });
 
+  testWidgets('profile changes sync into account and settings screens', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: AccountProfileScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Retro Tech'), findsOneWidget);
+
+    await store.saveProfile(
+      const UserProfile(
+        displayName: 'Walter Collector',
+        username: '@walter',
+        email: 'walter@example.com',
+        bio: 'Restores rare devices.',
+        location: 'Kuala Lumpur',
+        sellerName: 'Walter Shop',
+        preferredContact: 'In-app message',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Walter Collector'), findsOneWidget);
+    expect(find.text('@walter'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: SettingsScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Walter Collector'), findsOneWidget);
+    expect(find.text('Language'), findsNothing);
+    expect(find.text('Currency'), findsNothing);
+    expect(find.text('Theme'), findsNothing);
+  });
+
+  testWidgets('payment selection updates checkout and orders can be tracked', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: PaymentMethodsScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apple Pay'));
+    await tester.pumpAndSettle();
+    expect(store.selectedPaymentMethod.title, 'Apple Pay');
+    expect(find.byIcon(Icons.radio_button_checked_rounded), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        onGenerateRoute: (settings) {
+          if (settings.name == '/order-confirmed') {
+            return MaterialPageRoute<void>(
+              builder: (_) => OrderConfirmationScreen(
+                store: store,
+                order: settings.arguments as OrderRecord?,
+              ),
+              settings: settings,
+            );
+          }
+          if (settings.name == '/order-detail') {
+            return MaterialPageRoute<void>(
+              builder: (_) => OrderDetailScreen(
+                store: store,
+                order: settings.arguments as OrderRecord?,
+              ),
+              settings: settings,
+            );
+          }
+          return null;
+        },
+        home: CheckoutScreen(store: store, listing: seedListings.first),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Apple Pay'), findsOneWidget);
+
+    await tester.tap(find.text('Pay Securely'));
+    await tester.pumpAndSettle();
+    expect(store.orders, hasLength(1));
+    expect(find.text('Order Confirmed'), findsOneWidget);
+    expect(find.textContaining('Apple Pay'), findsOneWidget);
+
+    await tester.tap(find.text('Track Order'));
+    await tester.pumpAndSettle();
+    expect(find.text('Order Detail'), findsOneWidget);
+  });
+
+  testWidgets('profile saved items and seller follow use store state', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await store.toggleSaved('ipod-classic');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: AccountProfileScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Saved Items'), findsOneWidget);
+    expect(store.savedListings, hasLength(1));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: SellerProfileScreen(store: store, sellerName: 'VintageAudioCo'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Follow'), findsOneWidget);
+    await tester.tap(find.text('Follow'));
+    await tester.pumpAndSettle();
+    expect(find.text('Following'), findsOneWidget);
+    expect(store.isFollowing('VintageAudioCo'), isTrue);
+  });
+
+  testWidgets('filter pills update my listings, inbox, and help results', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: MyListingsScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('iMac G3'), findsNothing);
+    await tester.tap(find.text('Drafts').last);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('iMac G3'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.theme, home: const InboxScreen()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('VintageAudioCo'), findsOneWidget);
+    await tester.tap(find.text('Orders'));
+    await tester.pumpAndSettle();
+    expect(find.text('RetroTech Orders'), findsOneWidget);
+    expect(find.text('VintageAudioCo'), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.theme, home: const HelpSupportScreen()),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Payments'));
+    await tester.pumpAndSettle();
+    expect(find.text('How are payments protected?'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('help-search-field')),
+      'fake',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('No help topics found.'), findsOneWidget);
+  });
+
+  testWidgets('category detail price filter changes visible products', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: CategoryDetailScreen(store: store, category: 'Audio'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('RM 1599.00'), findsWidgets);
+    await tester.tap(find.text('Under RM1000'));
+    await tester.pumpAndSettle();
+    expect(find.text('RM 1599.00'), findsNothing);
+    expect(find.text('RM 999.00'), findsWidgets);
+  });
+
   testWidgets('product detail gallery swipes and dots select images', (
     WidgetTester tester,
   ) async {
@@ -221,7 +440,7 @@ void main() {
       MaterialApp(
         theme: AppTheme.theme,
         home: ProductDetailScreen(
-          store: ListingStore(),
+          store: testStore(),
           listing: ipod,
           videoPlayerBuilder: (_) => player,
         ),
@@ -265,73 +484,6 @@ void main() {
     expect(player.isPlaying, isFalse);
   });
 
-  testWidgets('product detail opens multimedia preview from demo entry', (
-    WidgetTester tester,
-  ) async {
-    setPhoneSize(tester);
-    final fakeMultimediaPlayer = FakeMultimediaPlayer();
-    final ipod = seedListings.firstWhere((item) => item.id == 'ipod-classic');
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.theme,
-        home: detailScreenForTest(ipod),
-        onGenerateRoute: (settings) {
-          return MaterialPageRoute<void>(
-            settings: settings,
-            builder: (_) => MultimediaScreen(
-              listing: settings.arguments as Listing?,
-              player: fakeMultimediaPlayer,
-            ),
-          );
-        },
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.drag(find.byType(ListView), const Offset(0, -520));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('product-multimedia-entry')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Media Preview'), findsOneWidget);
-    expect(find.text('Paused product demo'), findsOneWidget);
-  });
-
-  testWidgets('multimedia play pause button toggles playback state', (
-    WidgetTester tester,
-  ) async {
-    setPhoneSize(tester);
-    final player = FakeMultimediaPlayer();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.theme,
-        home: MultimediaScreen(listing: seedListings.first, player: player),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Paused product demo'), findsOneWidget);
-    expect(find.text('Play Demo'), findsOneWidget);
-
-    await tester.tap(
-      find.byKey(const ValueKey('multimedia-play-pause-button')),
-    );
-    await tester.pumpAndSettle();
-
-    expect(player.isPlaying, isTrue);
-    expect(find.text('Playing product demo'), findsOneWidget);
-    expect(find.text('Pause Demo'), findsOneWidget);
-
-    await tester.tap(
-      find.byKey(const ValueKey('multimedia-play-pause-button')),
-    );
-    await tester.pumpAndSettle();
-
-    expect(player.isPlaying, isFalse);
-    expect(find.text('Paused product demo'), findsOneWidget);
-    expect(find.text('Play Demo'), findsOneWidget);
-  });
-
   testWidgets('key screens fit common phone widths', (
     WidgetTester tester,
   ) async {
@@ -341,7 +493,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.theme,
-          home: GlassScaffold(child: CategoriesScreen(store: ListingStore())),
+          home: GlassScaffold(child: CategoriesScreen(store: testStore())),
         ),
       );
       await tester.pumpAndSettle();
@@ -360,7 +512,7 @@ void main() {
         MaterialApp(
           theme: AppTheme.theme,
           home: ProductDetailScreen(
-            store: ListingStore(),
+            store: testStore(),
             listing: seedListings.first,
             videoPlayerBuilder: (_) => FakeMultimediaPlayer(),
           ),
@@ -370,6 +522,83 @@ void main() {
       expect(find.text('Contact Seller'), findsOneWidget);
     }
   });
+}
+
+ListingStore testStore({FakeListingRepository? repository}) {
+  return ListingStore(repository: repository ?? FakeListingRepository());
+}
+
+class FakeListingRepository extends ListingRepository {
+  FakeListingRepository({List<Listing>? listings})
+    : _listings = [...(listings ?? seedListings)];
+
+  final List<Listing> _listings;
+  final Set<String> _savedItemIds = {};
+  final List<OrderRecord> _orders = [];
+  final Set<String> _followedSellers = {};
+  UserProfile _profile = UserProfile.defaults;
+
+  @override
+  Future<List<Listing>> load() async => List<Listing>.of(_listings);
+
+  @override
+  Future<void> add(Listing listing) async {
+    _listings.insert(0, listing);
+  }
+
+  @override
+  Future<void> update(Listing listing) async {
+    final index = _listings.indexWhere((item) => item.id == listing.id);
+    if (index != -1) _listings[index] = listing;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _listings.removeWhere((listing) => listing.id == id);
+    _savedItemIds.remove(id);
+  }
+
+  @override
+  Future<UserProfile> loadProfile() async => _profile;
+
+  @override
+  Future<void> saveProfile(UserProfile profile) async {
+    _profile = profile;
+  }
+
+  @override
+  Future<Set<String>> loadSavedItemIds() async => Set<String>.of(_savedItemIds);
+
+  @override
+  Future<void> setSaved(String listingId, bool saved) async {
+    if (saved) {
+      _savedItemIds.add(listingId);
+    } else {
+      _savedItemIds.remove(listingId);
+    }
+  }
+
+  @override
+  Future<List<OrderRecord>> loadOrders() async => List<OrderRecord>.of(_orders);
+
+  @override
+  Future<void> addOrder(OrderRecord order) async {
+    _orders.insert(0, order);
+  }
+
+  @override
+  Future<Set<String>> loadFollowedSellers() async {
+    return Set<String>.of(_followedSellers);
+  }
+
+  @override
+  Future<void> setFollowing(String seller, bool following) async {
+    if (following) {
+      _followedSellers.add(seller);
+    } else {
+      _followedSellers.remove(seller);
+    }
+  }
 }
 
 class FakeMultimediaPlayer implements MultimediaPlayer {

@@ -9,16 +9,26 @@ import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
 
-class InboxScreen extends StatelessWidget {
+class InboxScreen extends StatefulWidget {
   const InboxScreen({super.key, this.inShell = false});
 
   final bool inShell;
 
   @override
+  State<InboxScreen> createState() => _InboxScreenState();
+}
+
+class _InboxScreenState extends State<InboxScreen> {
+  String _filter = 'Messages';
+
+  @override
   Widget build(BuildContext context) {
     final metrics = ResponsiveMetrics.of(context);
+    final visibleMessages = _inboxMessages
+        .where((message) => message.type == _filter)
+        .toList(growable: false);
     final content = ListView(
-      padding: inShell
+      padding: widget.inShell
           ? metrics.pageInsetsWithNav
           : EdgeInsets.fromLTRB(22, 18, 22, 30 + metrics.bottomSafeInset),
       children: [
@@ -34,45 +44,95 @@ class InboxScreen extends StatelessWidget {
         SizedBox(height: 18),
         Row(
           children: [
-            FilterPill('Messages', true),
-            FilterPill('Orders', false),
-            FilterPill('Support', false),
+            for (final label in const ['Messages', 'Orders', 'Support'])
+              FilterPill(
+                label,
+                _filter == label,
+                onTap: () => setState(() => _filter = label),
+              ),
           ],
         ),
         SizedBox(height: 18),
-        MessageTile(
-          'RetroTech Collector',
-          'The iPod is fully tested and ready to ship.',
-          '2m',
-          '2',
-          Assets.ipod,
-        ),
-        MessageTile(
-          'VintageAudioCo',
-          'I can include the original earbuds for you.',
-          '18m',
-          '1',
-          Assets.avatarVintage,
-        ),
-        MessageTile(
-          'PalmPilotFan',
-          'Battery holds charge well. Let me know if you want more photos.',
-          '1h',
-          '3',
-          Assets.avatarPalm,
-        ),
-        MessageTile(
-          'PixelCam Studio',
-          'Price is firm, but shipping is free.',
-          'Yesterday',
-          '',
-          Assets.avatarPixel,
-        ),
+        if (visibleMessages.isEmpty)
+          GlassCard(
+            child: Text('No conversations found.', style: AppTheme.body),
+          )
+        else
+          ...visibleMessages.map(
+            (message) => MessageTile(
+              message.name,
+              message.message,
+              message.time,
+              message.badge,
+              message.asset,
+            ),
+          ),
       ],
     );
-    return inShell ? content : GlassScaffold(child: content);
+    return widget.inShell ? content : GlassScaffold(child: content);
   }
 }
+
+class _InboxMessage {
+  const _InboxMessage(
+    this.type,
+    this.name,
+    this.message,
+    this.time,
+    this.badge,
+    this.asset,
+  );
+
+  final String type;
+  final String name;
+  final String message;
+  final String time;
+  final String badge;
+  final String asset;
+}
+
+const _inboxMessages = [
+  _InboxMessage(
+    'Messages',
+    'RetroTech Collector',
+    'The iPod is fully tested and ready to ship.',
+    '2m',
+    '2',
+    Assets.logoMark,
+  ),
+  _InboxMessage(
+    'Messages',
+    'VintageAudioCo',
+    'I can include the original earbuds for you.',
+    '18m',
+    '1',
+    Assets.avatarVintage,
+  ),
+  _InboxMessage(
+    'Messages',
+    'PalmPilotFan',
+    'Battery holds charge well. Let me know if you want more photos.',
+    '1h',
+    '3',
+    Assets.avatarPalm,
+  ),
+  _InboxMessage(
+    'Orders',
+    'RetroTech Orders',
+    'Your latest order is paid and seller notified.',
+    'Today',
+    '',
+    Assets.ipod,
+  ),
+  _InboxMessage(
+    'Support',
+    'RetroTech Support',
+    'We can help with listings, payments, and account questions.',
+    'Yesterday',
+    '',
+    Assets.avatarPixel,
+  ),
+];
 
 class MessageTile extends StatelessWidget {
   const MessageTile(
@@ -96,7 +156,7 @@ class MessageTile extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 12),
       child: OpenMotionContainer(
         radius: 30,
-        openPage: const ChatThreadScreen(),
+        openPage: ChatThreadScreen(sellerName: name),
         routeSettings: const RouteSettings(name: '/chat'),
         closedBuilder: (openContainer) => LiquidPressable(
           onTap: openContainer,
@@ -158,9 +218,10 @@ class MessageTile extends StatelessWidget {
 }
 
 class ChatThreadScreen extends StatefulWidget {
-  const ChatThreadScreen({super.key, this.listing});
+  const ChatThreadScreen({super.key, this.listing, this.sellerName});
 
   final Listing? listing;
+  final String? sellerName;
 
   @override
   State<ChatThreadScreen> createState() => ChatThreadScreenState();
@@ -172,12 +233,16 @@ class ChatThreadScreenState extends State<ChatThreadScreen> {
   late final List<_ChatLine> _messages = _initialMessages;
 
   Listing get _item => widget.listing ?? seedListings.first;
+  String get _sellerName =>
+      widget.listing?.seller ?? widget.sellerName ?? _item.seller;
 
   List<_ChatLine> get _initialMessages {
     final item = _item;
     return [
       _ChatLine(
-        'Hi! Thanks for your interest in the ${item.title}.',
+        widget.listing == null
+            ? 'Hi! Thanks for reaching out.'
+            : 'Hi! Thanks for your interest in the ${item.title}.',
         false,
         '2:14 PM',
       ),
@@ -264,7 +329,7 @@ class ChatThreadScreenState extends State<ChatThreadScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.seller,
+                        _sellerName,
                         style: AppTheme.h2.copyWith(fontSize: 16),
                       ),
                       Text(

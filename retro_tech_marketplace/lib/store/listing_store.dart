@@ -1,72 +1,67 @@
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:sqflite/sqflite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../data/listing_repository.dart';
 import '../models/listing.dart';
-import 'seed_data.dart';
+import '../models/order_record.dart';
+import '../models/payment_method.dart';
+import '../models/user_profile.dart';
 
 class ListingStore extends ChangeNotifier {
-  static const _databaseName = 'retro_tech_marketplace.db';
-  static const _databaseVersion = 1;
-  static const _tableName = 'listings';
+  ListingStore({ListingRepository? repository})
+    : _repository = repository ?? ListingRepository();
 
+  final ListingRepository _repository;
   final List<Listing> _listings = [];
+  final Set<String> _savedItemIds = {};
+  final List<OrderRecord> _orders = [];
+  final Set<String> _followedSellers = {};
+  UserProfile _profile = UserProfile.defaults;
+  String _selectedPaymentMethodId = PaymentMethodOption.visa.id;
+  bool _notifications = true;
+  bool _privacy = true;
   bool _loaded = false;
-  Database? _database;
+
+  static const _selectedPaymentKey = 'selected_payment_method';
+  static const _notificationsKey = 'settings_notifications';
+  static const _privacyKey = 'settings_privacy';
 
   List<Listing> get listings => List.unmodifiable(_listings);
+  List<Listing> get savedListings => _listings
+      .where((listing) => _savedItemIds.contains(listing.id))
+      .toList(growable: false);
+  List<OrderRecord> get orders => List.unmodifiable(_orders);
+  UserProfile get profile => _profile;
+  PaymentMethodOption get selectedPaymentMethod =>
+      PaymentMethodOption.byId(_selectedPaymentMethodId);
+  bool get notifications => _notifications;
+  bool get privacy => _privacy;
   bool get loaded => _loaded;
-
-  Future<Database> get _db async {
-    final existing = _database;
-    if (existing != null) return existing;
-
-    final databasePath = await getDatabasesPath();
-    final database = await openDatabase(
-      p.join(databasePath, _databaseName),
-      version: _databaseVersion,
-      onCreate: _createDatabase,
-    );
-    _database = database;
-    return database;
-  }
-
-  Future<void> _createDatabase(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE $_tableName (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        subtitle TEXT NOT NULL,
-        category TEXT NOT NULL,
-        price REAL NOT NULL,
-        condition TEXT NOT NULL,
-        description TEXT NOT NULL,
-        storage TEXT NOT NULL,
-        battery TEXT NOT NULL,
-        connector TEXT NOT NULL,
-        imageAsset TEXT NOT NULL,
-        status TEXT NOT NULL,
-        views INTEGER NOT NULL,
-        seller TEXT NOT NULL,
-        rating REAL NOT NULL,
-        reviews INTEGER NOT NULL,
-        sortOrder INTEGER NOT NULL
-      )
-    ''');
-
-    final batch = db.batch();
-    for (var index = 0; index < seedListings.length; index += 1) {
-      batch.insert(_tableName, seedListings[index].toMap(sortOrder: index));
-    }
-    await batch.commit(noResult: true);
-  }
 
   Future<void> load() async {
     if (_loaded) return;
-    final db = await _db;
-    final rows = await db.query(_tableName, orderBy: 'sortOrder ASC');
+    final prefs = await SharedPreferences.getInstance();
+    final listings = await _repository.load();
+    final profile = await _repository.loadProfile();
+    final savedItemIds = await _repository.loadSavedItemIds();
+    final orders = await _repository.loadOrders();
+    final followedSellers = await _repository.loadFollowedSellers();
     _listings
       ..clear()
-      ..addAll(rows.map(Listing.fromMap));
+      ..addAll(listings);
+    _profile = profile;
+    _savedItemIds
+      ..clear()
+      ..addAll(savedItemIds);
+    _orders
+      ..clear()
+      ..addAll(orders);
+    _followedSellers
+      ..clear()
+      ..addAll(followedSellers);
+    _selectedPaymentMethodId =
+        prefs.getString(_selectedPaymentKey) ?? PaymentMethodOption.visa.id;
+    _notifications = prefs.getBool(_notificationsKey) ?? true;
+    _privacy = prefs.getBool(_privacyKey) ?? true;
     _loaded = true;
     notifyListeners();
   }
@@ -86,12 +81,32 @@ class ListingStore extends ChangeNotifier {
         .toList();
   }
 
+  List<Listing> bySeller(String seller) {
+    return _listings
+        .where(
+          (listing) => listing.seller.toLowerCase() == seller.toLowerCase(),
+        )
+        .toList(growable: false);
+  }
+
+  Listing? firstBySeller(String seller) {
+    final matches = bySeller(seller);
+    return matches.isEmpty ? null : matches.first;
+  }
+
+  OrderRecord? orderById(String id) {
+    for (final order in _orders) {
+      if (order.id == id) return order;
+    }
+    return null;
+  }
+
+  bool isSaved(String listingId) => _savedItemIds.contains(listingId);
+
+  bool isFollowing(String seller) => _followedSellers.contains(seller);
+
   Future<void> add(Listing listing) async {
-    final db = await _db;
-    await db.transaction((txn) async {
-      await txn.rawUpdate('UPDATE $_tableName SET sortOrder = sortOrder + 1');
-      await txn.insert(_tableName, listing.toMap(sortOrder: 0));
-    });
+    await _repository.add(listing);
     _listings.insert(0, listing);
     notifyListeners();
   }
@@ -99,21 +114,86 @@ class ListingStore extends ChangeNotifier {
   Future<void> update(Listing listing) async {
     final index = _listings.indexWhere((item) => item.id == listing.id);
     if (index == -1) return;
-    final db = await _db;
-    await db.update(
-      _tableName,
-      listing.toMap(),
-      where: 'id = ?',
-      whereArgs: [listing.id],
-    );
+    await _repository.update(listing);
     _listings[index] = listing;
     notifyListeners();
   }
 
   Future<void> delete(String id) async {
-    final db = await _db;
-    await db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+    await _repository.delete(id);
     _listings.removeWhere((item) => item.id == id);
+    _savedItemIds.remove(id);
+    notifyListeners();
+  }
+
+  Future<void> saveProfile(UserProfile profile) async {
+    await _repository.saveProfile(profile);
+    _profile = profile;
+    notifyListeners();
+  }
+
+  Future<void> toggleSaved(String listingId) async {
+    final saved = !_savedItemIds.contains(listingId);
+    await _repository.setSaved(listingId, saved);
+    if (saved) {
+      _savedItemIds.add(listingId);
+    } else {
+      _savedItemIds.remove(listingId);
+    }
+    notifyListeners();
+  }
+
+  Future<OrderRecord> createOrder(Listing listing) async {
+    final now = DateTime.now();
+    final order = OrderRecord(
+      id: 'RT${now.millisecondsSinceEpoch}',
+      listingId: listing.id,
+      listingTitle: listing.shortTitle,
+      seller: listing.seller,
+      imageAsset: listing.imageAsset,
+      itemPrice: listing.price,
+      shipping: 35,
+      protectionFee: 15,
+      paymentMethodId: selectedPaymentMethod.id,
+      paymentMethodTitle: selectedPaymentMethod.title,
+      status: 'Paid',
+      createdAt: now,
+    );
+    await _repository.addOrder(order);
+    _orders.insert(0, order);
+    notifyListeners();
+    return order;
+  }
+
+  Future<void> selectPaymentMethod(String methodId) async {
+    _selectedPaymentMethodId = PaymentMethodOption.byId(methodId).id;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_selectedPaymentKey, _selectedPaymentMethodId);
+    notifyListeners();
+  }
+
+  Future<void> setNotifications(bool value) async {
+    _notifications = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setPrivacy(bool value) async {
+    _privacy = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_privacyKey, value);
+    notifyListeners();
+  }
+
+  Future<void> toggleFollow(String seller) async {
+    final following = !_followedSellers.contains(seller);
+    await _repository.setFollowing(seller, following);
+    if (following) {
+      _followedSellers.add(seller);
+    } else {
+      _followedSellers.remove(seller);
+    }
     notifyListeners();
   }
 }

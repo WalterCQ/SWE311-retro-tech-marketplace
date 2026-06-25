@@ -356,17 +356,18 @@ class SolidCircleButton extends StatelessWidget {
 }
 
 class FilterPill extends StatelessWidget {
-  const FilterPill(this.label, this.active, {super.key});
+  const FilterPill(this.label, this.active, {super.key, this.onTap});
 
   final String label;
   final bool active;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(right: 8),
       child: LiquidPressable(
-        onTap: () {},
+        onTap: onTap ?? () {},
         active: active,
         borderRadius: BorderRadius.circular(999),
         glowColor: active ? AppTheme.red : AppTheme.blue,

@@ -6,11 +6,12 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
-import '../checkout/checkout_screen.dart';
+import '../checkout/order_confirmation_screen.dart';
 import '../product/my_listings_screen.dart';
 import '../settings/chat_thread_screen.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'saved_items_screen.dart';
 
 class AccountProfileScreen extends StatelessWidget {
   const AccountProfileScreen({super.key, required this.store});
@@ -23,6 +24,7 @@ class AccountProfileScreen extends StatelessWidget {
       animation: store,
       builder: (context, _) {
         final metrics = ResponsiveMetrics.of(context);
+        final profile = store.profile;
         return ListView(
           padding: metrics.pageInsetsWithNav,
           children: [
@@ -30,7 +32,7 @@ class AccountProfileScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: OpenMotionContainer(
                 radius: 23,
-                openPage: const SettingsScreen(),
+                openPage: SettingsScreen(store: store),
                 routeSettings: const RouteSettings(name: '/settings'),
                 closedBuilder: (openContainer) => CircleGlassButton(
                   icon: Icons.settings_rounded,
@@ -43,25 +45,23 @@ class AccountProfileScreen extends StatelessWidget {
             SizedBox(height: 12),
             Center(
               child: Text(
-                'Retro Tech',
+                profile.displayName,
                 style: AppTheme.h1.copyWith(fontSize: 26),
               ),
             ),
             Center(
               child: Text(
-                '@retrotech',
+                profile.username,
                 style: AppTheme.body.copyWith(fontSize: 14),
               ),
             ),
             SizedBox(height: 4),
-            Center(
-              child: Text('Collect rare. Live timeless.', style: AppTheme.body),
-            ),
+            Center(child: Text(profile.bio, style: AppTheme.body)),
             SizedBox(height: 10),
             Center(
               child: OpenMotionContainer(
                 radius: 18,
-                openPage: EditProfileScreen(),
+                openPage: EditProfileScreen(store: store),
                 routeSettings: const RouteSettings(name: '/edit-profile'),
                 closedBuilder: (openContainer) => TextButton(
                   onPressed: openContainer,
@@ -78,7 +78,7 @@ class AccountProfileScreen extends StatelessWidget {
                   Icons.article_outlined,
                 ),
                 ProfileStat(
-                  '342',
+                  '${store.savedListings.length}',
                   'Saved',
                   Icons.favorite_rounded,
                   color: AppTheme.red,
@@ -105,21 +105,19 @@ class AccountProfileScreen extends StatelessWidget {
                 ),
                 ProfileRow(
                   'Orders',
-                  '8',
+                  '${store.orders.length}',
                   Icons.inventory_2_outlined,
                   null,
-                  openPage: CheckoutScreen(
-                    listing: store.listings.isEmpty
-                        ? null
-                        : store.listings.first,
-                  ),
-                  routeSettings: const RouteSettings(name: '/checkout'),
+                  openPage: OrdersScreen(store: store),
+                  routeSettings: const RouteSettings(name: '/orders'),
                 ),
                 ProfileRow(
                   'Saved Items',
-                  '342',
+                  '${store.savedListings.length}',
                   Icons.favorite_border_rounded,
                   null,
+                  openPage: SavedItemsScreen(store: store),
+                  routeSettings: const RouteSettings(name: '/saved-items'),
                 ),
                 ProfileRow(
                   'Messages',
@@ -140,7 +138,13 @@ class AccountProfileScreen extends StatelessWidget {
               '2h ago',
               Assets.ipodFront,
             ),
-            ActivityTile('Motorola V60', 'Saved item', '1d ago', Assets.v60),
+            if (store.savedListings.isNotEmpty)
+              ActivityTile(
+                store.savedListings.first.shortTitle,
+                'Saved item',
+                'Now',
+                store.savedListings.first.imageAsset,
+              ),
           ],
         );
       },
@@ -236,17 +240,19 @@ class CommunityPostCard extends StatelessWidget {
     required this.time,
     required this.text,
     required this.asset,
+    this.onTap,
   });
 
   final String user;
   final String time;
   final String text;
   final String asset;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return LiquidPressable(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(30),
       glowColor: AppTheme.blue,
       child: GlassCard(

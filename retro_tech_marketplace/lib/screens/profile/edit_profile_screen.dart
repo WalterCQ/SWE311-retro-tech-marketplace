@@ -1,27 +1,60 @@
 import 'package:flutter/material.dart';
 import '../../constants/theme.dart';
+import '../../models/user_profile.dart';
+import '../../store/listing_store.dart';
 import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
 
-class EditProfileScreen extends StatelessWidget {
-  EditProfileScreen({super.key});
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key, required this.store});
 
-  final _displayName = TextEditingController(text: 'Retro Tech');
-  final _username = TextEditingController(text: '@retrotech');
-  final _email = TextEditingController(text: 'retro@tech.market');
-  final _bio = TextEditingController(text: 'Collect rare. Live timeless.');
-  final _location = TextEditingController(text: 'Kuala Lumpur');
-  final _seller = TextEditingController(text: 'RetroTech Collector');
-  final _contact = TextEditingController(text: 'In-app message');
+  final ListingStore store;
+
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  late final _displayName = TextEditingController(
+    text: widget.store.profile.displayName,
+  );
+  late final _username = TextEditingController(
+    text: widget.store.profile.username,
+  );
+  late final _email = TextEditingController(text: widget.store.profile.email);
+  late final _bio = TextEditingController(text: widget.store.profile.bio);
+  late final _location = TextEditingController(
+    text: widget.store.profile.location,
+  );
+  late final _seller = TextEditingController(
+    text: widget.store.profile.sellerName,
+  );
+  late final _contact = TextEditingController(
+    text: widget.store.profile.preferredContact,
+  );
+
+  @override
+  void dispose() {
+    _displayName.dispose();
+    _username.dispose();
+    _email.dispose();
+    _bio.dispose();
+    _location.dispose();
+    _seller.dispose();
+    _contact.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return FormShell(
       title: 'Edit Profile',
       action: 'Save Profile',
-      onSave: () => Navigator.pop(context),
+      onSave: () {
+        _save();
+      },
       children: [
         Center(child: LogoMark(size: 110, heroTag: accountLogoHeroTag)),
         SizedBox(height: 20),
@@ -71,5 +104,34 @@ class EditProfileScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _save() async {
+    await widget.store.saveProfile(
+      UserProfile(
+        displayName: _displayName.text.trim().isEmpty
+            ? UserProfile.defaults.displayName
+            : _displayName.text.trim(),
+        username: _username.text.trim().isEmpty
+            ? UserProfile.defaults.username
+            : _username.text.trim(),
+        email: _email.text.trim().isEmpty
+            ? UserProfile.defaults.email
+            : _email.text.trim(),
+        bio: _bio.text.trim().isEmpty
+            ? UserProfile.defaults.bio
+            : _bio.text.trim(),
+        location: _location.text.trim().isEmpty
+            ? UserProfile.defaults.location
+            : _location.text.trim(),
+        sellerName: _seller.text.trim().isEmpty
+            ? UserProfile.defaults.sellerName
+            : _seller.text.trim(),
+        preferredContact: _contact.text.trim().isEmpty
+            ? UserProfile.defaults.preferredContact
+            : _contact.text.trim(),
+      ),
+    );
+    if (mounted) Navigator.pop(context);
   }
 }

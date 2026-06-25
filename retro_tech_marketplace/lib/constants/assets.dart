@@ -2,7 +2,7 @@ class Assets {
   static const background = 'assets/images/aero-background.png';
   static const detailBackground = 'assets/images/detail-background.png';
   static const loginBackground = 'assets/images/login-background.png';
-  static const logoMark = 'assets/images/retro-tech-mark.png';
+  static const logoMark = 'assets/images/retro-tech-app-icon.png';
   static const homeAvatar = 'assets/images/home-avatar.png';
   static const googleIcon = 'assets/images/google-logo.svg';
   static const appleIcon = 'assets/images/apple-logo.svg';

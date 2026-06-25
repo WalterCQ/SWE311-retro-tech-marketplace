@@ -10,10 +10,17 @@ import '../../widgets/liquid_button.dart';
 import '../../widgets/navigation.dart';
 import '../home/home_screen.dart';
 
-class MyListingsScreen extends StatelessWidget {
+class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key, required this.store});
 
   final ListingStore store;
+
+  @override
+  State<MyListingsScreen> createState() => _MyListingsScreenState();
+}
+
+class _MyListingsScreenState extends State<MyListingsScreen> {
+  String _filter = 'Published';
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +28,22 @@ class MyListingsScreen extends StatelessWidget {
       child: Stack(
         children: [
           AnimatedBuilder(
-            animation: store,
+            animation: widget.store,
             builder: (context, _) {
+              final published = widget.store.listings
+                  .where((listing) => _isPublished(listing))
+                  .toList();
+              final drafts = widget.store.listings
+                  .where((listing) => listing.status == 'Draft')
+                  .toList();
+              final sold = widget.store.listings
+                  .where((listing) => listing.status == 'Sold')
+                  .toList();
+              final visible = switch (_filter) {
+                'Drafts' => drafts,
+                'Sold' => sold,
+                _ => published,
+              };
               return ListView(
                 padding: EdgeInsets.fromLTRB(22, 18, 22, 104),
                 children: [
@@ -33,44 +54,61 @@ class MyListingsScreen extends StatelessWidget {
                   SizedBox(height: 18),
                   Row(
                     children: [
-                      _ListingCounter(
-                        '${store.listings.where((e) => e.status == 'Published').length}',
-                        'Published',
-                      ),
-                      _ListingCounter(
-                        '${store.listings.where((e) => e.status == 'Draft').length}',
-                        'Drafts',
-                      ),
-                      _ListingCounter('5', 'Sold'),
+                      _ListingCounter('${published.length}', 'Published'),
+                      _ListingCounter('${drafts.length}', 'Drafts'),
+                      _ListingCounter('${sold.length}', 'Sold'),
                     ],
                   ),
                   SizedBox(height: 18),
                   Row(
                     children: [
-                      FilterPill('Published', true),
-                      FilterPill('Drafts', false),
-                      FilterPill('Sold', false),
+                      FilterPill(
+                        'Published',
+                        _filter == 'Published',
+                        onTap: () => setState(() => _filter = 'Published'),
+                      ),
+                      FilterPill(
+                        'Drafts',
+                        _filter == 'Drafts',
+                        onTap: () => setState(() => _filter = 'Drafts'),
+                      ),
+                      FilterPill(
+                        'Sold',
+                        _filter == 'Sold',
+                        onTap: () => setState(() => _filter = 'Sold'),
+                      ),
                     ],
                   ),
                   SizedBox(height: 18),
-                  ...store.listings.map(
-                    (listing) => ListingCard(
-                      listing: listing,
-                      openStore: store,
-                      onTap: () => Navigator.pushNamed(
-                        context,
-                        '/product',
-                        arguments: listing,
+                  if (visible.isEmpty)
+                    GlassCard(
+                      child: Text(
+                        'No ${_filter.toLowerCase()} listings.',
+                        style: AppTheme.body,
                       ),
-                      onEdit: () => Navigator.pushNamed(
-                        context,
-                        '/edit-listing',
-                        arguments: listing,
+                    )
+                  else
+                    ...visible.map(
+                      (listing) => ListingCard(
+                        listing: listing,
+                        openStore: widget.store,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/product',
+                          arguments: listing,
+                        ),
+                        onEdit: () => Navigator.pushNamed(
+                          context,
+                          '/edit-listing',
+                          arguments: listing,
+                        ),
+                        onDelete: () => showDeleteListingDialog(
+                          context,
+                          widget.store,
+                          listing,
+                        ),
                       ),
-                      onDelete: () =>
-                          showDeleteListingDialog(context, store, listing),
                     ),
-                  ),
                 ],
               );
             },
@@ -101,6 +139,10 @@ class MyListingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  bool _isPublished(Listing listing) {
+    return listing.status != 'Draft' && listing.status != 'Sold';
   }
 }
 

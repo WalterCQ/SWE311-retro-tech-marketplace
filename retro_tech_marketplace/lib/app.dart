@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'store/listing_store.dart';
 import 'constants/theme.dart';
 import 'models/listing.dart';
+import 'models/order_record.dart';
 import 'services/update_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/registration_screen.dart';
@@ -11,12 +12,12 @@ import 'screens/product/product_detail_screen.dart';
 import 'screens/product/category_detail_screen.dart';
 import 'screens/product/my_listings_screen.dart';
 import 'screens/product/listing_form_screen.dart';
-import 'screens/product/multimedia_screen.dart';
 import 'screens/checkout/checkout_screen.dart';
 import 'screens/checkout/order_confirmation_screen.dart';
 import 'screens/profile/seller_profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/profile/payment_methods_screen.dart';
+import 'screens/profile/saved_items_screen.dart';
 import 'screens/settings/chat_thread_screen.dart';
 import 'screens/settings/help_support_screen.dart';
 import 'screens/settings/about_screen.dart';
@@ -81,9 +82,6 @@ class _RetroTechAppState extends State<RetroTechApp> {
           listing: settings.arguments as Listing?,
         );
         break;
-      case '/multimedia':
-        page = MultimediaScreen(listing: settings.arguments as Listing?);
-        break;
       case '/category':
         page = CategoryDetailScreen(
           store: widget.store,
@@ -106,25 +104,53 @@ class _RetroTechAppState extends State<RetroTechApp> {
         page = DeleteConfirmationScreen(store: widget.store);
         break;
       case '/checkout':
-        page = CheckoutScreen(listing: settings.arguments as Listing?);
+        page = CheckoutScreen(
+          store: widget.store,
+          listing: settings.arguments as Listing?,
+        );
         break;
       case '/order-confirmed':
-        page = OrderConfirmationScreen(listing: settings.arguments as Listing?);
+        final argument = settings.arguments;
+        page = OrderConfirmationScreen(
+          store: widget.store,
+          order: argument is OrderRecord ? argument : null,
+        );
+        break;
+      case '/orders':
+        page = OrdersScreen(store: widget.store);
+        break;
+      case '/order-detail':
+        final argument = settings.arguments;
+        page = OrderDetailScreen(
+          store: widget.store,
+          order: argument is OrderRecord ? argument : null,
+          orderId: argument is String ? argument : null,
+        );
         break;
       case '/seller':
-        page = SellerProfileScreen(store: widget.store);
+        page = SellerProfileScreen(
+          store: widget.store,
+          sellerName: settings.arguments as String?,
+        );
         break;
       case '/settings':
-        page = SettingsScreen();
+        page = SettingsScreen(store: widget.store);
         break;
       case '/edit-profile':
-        page = EditProfileScreen();
+        page = EditProfileScreen(store: widget.store);
         break;
       case '/payment-methods':
-        page = PaymentMethodsScreen();
+        page = PaymentMethodsScreen(store: widget.store);
+        break;
+      case '/saved-items':
+        page = SavedItemsScreen(store: widget.store);
         break;
       case '/chat':
-        page = ChatThreadScreen(listing: settings.arguments as Listing?);
+        final argument = settings.arguments;
+        page = ChatThreadScreen(
+          listing: argument is Listing ? argument : null,
+          sellerName: argument is String ? argument : null,
+        );
         break;
       case '/help':
         page = HelpSupportScreen();

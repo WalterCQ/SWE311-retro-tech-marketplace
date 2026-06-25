@@ -10,7 +10,7 @@ import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
 import '../home/home_screen.dart';
-import 'multimedia_screen.dart';
+import 'product_video_player.dart';
 
 typedef ProductVideoPlayerBuilder = MultimediaPlayer Function(String asset);
 
@@ -68,7 +68,7 @@ class ProductDetailScreen extends StatelessWidget {
                           size: 44,
                         ),
                         SizedBox(width: metrics.compact ? 10 : 14),
-                        const FavoriteButton(size: 44),
+                        FavoriteButton(store: store, listing: item, size: 44),
                       ],
                     ),
                     SizedBox(height: metrics.compact ? 14 : 22),
@@ -486,6 +486,8 @@ class ProductDetailPanel extends StatelessWidget {
                 icon: Icons.shopping_cart_outlined,
                 color: AppTheme.blue,
                 size: metrics.compact ? 42 : 46,
+                onTap: () =>
+                    Navigator.pushNamed(context, '/checkout', arguments: item),
               ),
             ],
           ),
@@ -538,8 +540,6 @@ class ProductDetailPanel extends StatelessWidget {
             },
           ),
           SizedBox(height: metrics.compact ? 18 : 22),
-          MultimediaPreviewTile(item: item),
-          SizedBox(height: metrics.compact ? 18 : 22),
           Divider(height: 1, color: AppTheme.line),
           SizedBox(height: metrics.compact ? 16 : 18),
           Text('Seller', style: AppTheme.h2.copyWith(fontSize: 15)),
@@ -573,74 +573,15 @@ class ProductDetailPanel extends StatelessWidget {
               CircleGlassButton(
                 icon: Icons.more_horiz_rounded,
                 size: 42,
-                onTap: () => Navigator.pushNamed(context, '/seller'),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/seller',
+                  arguments: item.seller,
+                ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class MultimediaPreviewTile extends StatelessWidget {
-  const MultimediaPreviewTile({super.key, required this.item});
-
-  final Listing item;
-
-  @override
-  Widget build(BuildContext context) {
-    final metrics = ResponsiveMetrics.of(context);
-    return LiquidPressable(
-      onTap: () => Navigator.pushNamed(context, '/multimedia', arguments: item),
-      borderRadius: BorderRadius.circular(22),
-      glowColor: AppTheme.blue,
-      child: GlassCard(
-        key: const ValueKey('product-multimedia-entry'),
-        padding: EdgeInsets.all(metrics.compact ? 12 : 14),
-        radius: 22,
-        opacity: 0.5,
-        blur: 12,
-        child: Row(
-          children: [
-            Container(
-              width: metrics.compact ? 40 : 44,
-              height: metrics.compact ? 40 : 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.blue.withValues(alpha: 0.1),
-              ),
-              child: Icon(
-                Icons.play_arrow_rounded,
-                color: AppTheme.blue,
-                size: metrics.compact ? 25 : 28,
-              ),
-            ),
-            SizedBox(width: metrics.gutter),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Product Demo',
-                    style: AppTheme.h2.copyWith(fontSize: 15),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Watch and pause the media preview',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTheme.body.copyWith(fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 8),
-            Text('Watch', style: AppTheme.label),
-            SizedBox(width: 4),
-            Icon(Icons.chevron_right_rounded, color: AppTheme.muted, size: 22),
-          ],
-        ),
       ),
     );
   }

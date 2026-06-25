@@ -1,11 +1,11 @@
 {
-    "name": "retro_tech_marketplace",
-    "short_name": "retro_tech_marketplace",
+    "name": "Retro Tech Marketplace",
+    "short_name": "Retro Tech",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "A retro technology marketplace app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
