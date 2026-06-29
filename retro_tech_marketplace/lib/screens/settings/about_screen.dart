@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../constants/assets.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
@@ -39,49 +42,7 @@ class AboutScreen extends StatelessWidget {
               ],
             ),
             SizedBox(height: metrics.compact ? 28 : 42),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final showInlineArt = constraints.maxWidth >= 340;
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: AboutHeroCopy(compact: metrics.compact)),
-                    if (showInlineArt) ...[
-                      SizedBox(width: metrics.gutter),
-                      SizedBox(
-                        width: constraints.maxWidth * 0.5,
-                        height: metrics.compact ? 168 : 210,
-                        child: Transform.rotate(
-                          angle: 0.06981317007977318,
-                          child: Image.asset(
-                            Assets.glassButterfly,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                            cacheWidth: imageCacheDimension(
-                              context,
-                              constraints.maxWidth * 0.5,
-                              logicalHeight: metrics.compact ? 168 : 210,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                );
-              },
-            ),
-            if (metrics.width < 340) ...[
-              SizedBox(height: metrics.gutter),
-              SizedBox(
-                height: 190,
-                child: Image.asset(
-                  Assets.glassButterfly,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  cacheWidth: imageCacheDimension(context, 190),
-                ),
-              ),
-            ],
+            AboutHeroCopy(compact: metrics.compact),
             SizedBox(height: metrics.compact ? 30 : 42),
             Row(
               children: const [
@@ -157,7 +118,7 @@ class AboutScreen extends StatelessWidget {
               builder: (context, constraints) {
                 final gap = metrics.compact ? 8.0 : 10.0;
                 final cardWidth = ((constraints.maxWidth - gap * 2) / 3)
-                    .clamp(88.0, 116.0)
+                    .clamp(86.0, 132.0)
                     .toDouble();
                 return Row(
                   children: [
@@ -167,10 +128,6 @@ class AboutScreen extends StatelessWidget {
                       'Secure payments\nand verified\nsellers.',
                       aboutRed,
                       width: cardWidth,
-                      iconTop: 4,
-                      titleLeft: 20,
-                      titleTop: 43,
-                      copyTop: 63,
                       iconSize: 18,
                     ),
                     SizedBox(width: gap),
@@ -180,10 +137,6 @@ class AboutScreen extends StatelessWidget {
                       'Connect with\ncollectors who\nshare your passion.',
                       aboutBlue,
                       width: cardWidth,
-                      iconTop: 5,
-                      titleLeft: 11,
-                      titleTop: 44,
-                      copyTop: 65,
                       iconSize: 16,
                     ),
                     SizedBox(width: gap),
@@ -193,10 +146,6 @@ class AboutScreen extends StatelessWidget {
                       'Give vintage\ntech a second\nlife together.',
                       aboutGreen,
                       width: cardWidth,
-                      iconTop: 6,
-                      titleLeft: 23,
-                      titleTop: 47,
-                      copyTop: 65,
                       iconSize: 16,
                     ),
                   ],
@@ -247,6 +196,8 @@ class AboutScreen extends StatelessWidget {
             ),
             SizedBox(height: metrics.compact ? 28 : 36),
             const AboutNewsCard(),
+            SizedBox(height: metrics.compact ? 18 : 22),
+            const HeadquartersMapCard(),
           ],
         ),
       ),
@@ -311,6 +262,10 @@ const aboutBlue = Color(0xFF0573FF);
 const aboutRed = Color(0xFFFF080F);
 const aboutGreen = Color(0xFF0DB238);
 const aboutViolet = Color(0xFF7338F2);
+const _headquartersLocation = LatLng(2.8306875, 101.7024375);
+final _headquartersOpenStreetMapUri = Uri.parse(
+  'https://www.openstreetmap.org/?mlat=2.8306875&mlon=101.7024375#map=16/2.8306875/101.7024375',
+);
 
 class AboutText {
   static const baseFont = 'Inter';
@@ -448,16 +403,48 @@ class AboutBackground extends StatelessWidget {
     return Positioned.fill(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return Image.asset(
-            Assets.background,
-            fit: BoxFit.cover,
-            alignment: Alignment.topLeft,
-            filterQuality: FilterQuality.high,
-            cacheWidth: imageCacheDimension(
-              context,
-              constraints.maxWidth,
-              logicalHeight: constraints.maxHeight,
-            ),
+          final wingWidth = (constraints.maxWidth * 0.68)
+              .clamp(210.0, 296.0)
+              .toDouble();
+          final wingHeight = wingWidth * 225 / 277;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                Assets.background,
+                fit: BoxFit.cover,
+                alignment: Alignment.topLeft,
+                filterQuality: FilterQuality.high,
+                cacheWidth: imageCacheDimension(
+                  context,
+                  constraints.maxWidth,
+                  logicalHeight: constraints.maxHeight,
+                ),
+              ),
+              Positioned(
+                top: constraints.maxHeight < 740 ? 64 : 78,
+                right: -wingWidth * 0.16,
+                width: wingWidth,
+                height: wingHeight,
+                child: Opacity(
+                  opacity: 0.92,
+                  child: Transform.rotate(
+                    angle: 0.06981317007977318,
+                    child: Image.asset(
+                      Assets.glassButterfly,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      cacheWidth: imageCacheDimension(
+                        context,
+                        wingWidth,
+                        logicalHeight: wingHeight,
+                        overscan: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -585,10 +572,6 @@ class ValueCard extends StatelessWidget {
     this.color, {
     super.key,
     required this.width,
-    required this.iconTop,
-    required this.titleLeft,
-    required this.titleTop,
-    required this.copyTop,
     required this.iconSize,
   });
 
@@ -597,15 +580,12 @@ class ValueCard extends StatelessWidget {
   final String text;
   final Color color;
   final double width;
-  final double iconTop;
-  final double titleLeft;
-  final double titleTop;
-  final double copyTop;
   final double iconSize;
 
   @override
   Widget build(BuildContext context) {
-    final height = (112 * (width / 116)).clamp(92.0, 112.0).toDouble();
+    final scale = (width / 116).clamp(0.86, 1.08).toDouble();
+    final height = (112 * scale).clamp(96.0, 120.0).toDouble();
     return LiquidPressable(
       onTap: () {},
       borderRadius: BorderRadius.circular(18),
@@ -615,47 +595,38 @@ class ValueCard extends StatelessWidget {
         height: height,
         radius: 18 * (width / 116).clamp(0.82, 1),
         opacity: 0.52,
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox(
-              width: 116,
-              height: 112,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 40,
-                    top: iconTop,
-                    child: AboutGlassSurface(
-                      width: 34,
-                      height: 34,
-                      radius: 17,
-                      child: Icon(icon, color: color, size: iconSize),
-                    ),
-                  ),
-                  Positioned(
-                    left: titleLeft,
-                    top: titleTop,
-                    width: 92,
-                    child: Text(
-                      title,
-                      style: AboutText.valueTitle.copyWith(color: color),
-                      textAlign: TextAlign.left,
-                    ),
-                  ),
-                  Positioned(
-                    left: 12,
-                    top: copyTop,
-                    width: 92,
-                    child: Text(
-                      text,
-                      style: AboutText.valueCopy,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 7 * scale,
+            vertical: 8 * scale,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AboutGlassSurface(
+                width: 34 * scale,
+                height: 34 * scale,
+                radius: 17 * scale,
+                child: Icon(icon, color: color, size: iconSize * scale),
               ),
-            ),
+              SizedBox(height: 6 * scale),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: AboutText.valueTitle.copyWith(color: color),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 4 * scale),
+              Text(
+                text,
+                style: AboutText.valueCopy,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -681,33 +652,24 @@ class Number extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      height: 43,
-      child: FittedBox(
-        alignment: Alignment.centerLeft,
-        fit: BoxFit.scaleDown,
-        child: SizedBox(
-          width: 90,
-          height: 43,
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0,
-                top: 0,
-                width: 80,
-                child: Text(
-                  value,
-                  style: AboutText.metric.copyWith(color: color),
-                ),
-              ),
-              Positioned(
-                left: 0,
-                top: 28,
-                width: 90,
-                child: Text(label, style: AboutText.metricLabel),
-              ),
-            ],
+      height: 48,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value, style: AboutText.metric.copyWith(color: color)),
           ),
-        ),
+          SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AboutText.metricLabel,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -788,4 +750,205 @@ class AboutNewsCard extends StatelessWidget {
       },
     );
   }
+}
+
+class HeadquartersMapCard extends StatelessWidget {
+  const HeadquartersMapCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 340;
+        final mapHeight = compact ? 142.0 : 152.0;
+        return AboutGlassSurface(
+          width: constraints.maxWidth,
+          height: compact ? 240 : 252,
+          radius: 30,
+          opacity: 0.58,
+          child: Padding(
+            padding: EdgeInsets.all(compact ? 10 : 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HeadquartersMapPreview(height: mapHeight),
+                SizedBox(height: compact ? 10 : 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AboutGlassSurface(
+                      width: 38,
+                      height: 38,
+                      radius: 19,
+                      opacity: 0.52,
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        color: aboutRed,
+                        size: 22,
+                      ),
+                    ),
+                    SizedBox(width: compact ? 10 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'OpenStreetMap',
+                            style: AboutText.newsEyebrow.copyWith(
+                              color: aboutBlue,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Our Company Headquarters',
+                            style: AboutText.newsTitle.copyWith(fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'RPJ2+7X, Sepang, Selangor',
+                            style: AboutText.newsCopy.copyWith(fontSize: 10),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Map data: OpenStreetMap contributors',
+                            style: AboutText.metricLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: compact ? 8 : 10),
+                    Tooltip(
+                      message: 'Open in OpenStreetMap',
+                      child: SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: LiquidPressable(
+                          onTap: () => _openHeadquartersMap(context),
+                          borderRadius: BorderRadius.circular(21),
+                          glowColor: aboutBlue,
+                          child: AboutGlassSurface(
+                            width: 42,
+                            height: 42,
+                            radius: 21,
+                            opacity: 0.52,
+                            child: Icon(
+                              Icons.open_in_new_rounded,
+                              color: aboutBlue,
+                              size: 21,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class HeadquartersMapPreview extends StatelessWidget {
+  const HeadquartersMapPreview({super.key, required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: FlutterMap(
+          options: const MapOptions(
+            initialCenter: _headquartersLocation,
+            initialZoom: 16,
+            minZoom: 13,
+            maxZoom: 18,
+            interactionOptions: InteractionOptions(
+              flags:
+                  InteractiveFlag.drag |
+                  InteractiveFlag.pinchZoom |
+                  InteractiveFlag.doubleTapZoom |
+                  InteractiveFlag.scrollWheelZoom,
+            ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'RetroTechMarketplace/1.1.2',
+              maxNativeZoom: 19,
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: _headquartersLocation,
+                  width: 46,
+                  height: 46,
+                  alignment: Alignment.bottomCenter,
+                  child: Icon(
+                    Icons.location_pin,
+                    color: aboutRed,
+                    size: 42,
+                    shadows: [
+                      Shadow(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SimpleAttributionWidget(
+              source: Text(
+                'OpenStreetMap contributors',
+                style: AboutText.metricLabel.copyWith(
+                  color: aboutInk,
+                  fontSize: 8,
+                ),
+              ),
+              backgroundColor: Colors.white.withValues(alpha: 0.86),
+              alignment: Alignment.bottomLeft,
+              onTap: () {
+                launchUrl(
+                  Uri.parse('https://www.openstreetmap.org/copyright'),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _openHeadquartersMap(BuildContext context) async {
+  final opened = await launchUrl(
+    _headquartersOpenStreetMapUri,
+    mode: LaunchMode.externalApplication,
+  );
+  if (opened || !context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        'Unable to open OpenStreetMap.',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: aboutInk,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    ),
+  );
 }

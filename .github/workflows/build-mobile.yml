@@ -75,14 +75,17 @@ jobs:
       - name: Build unsigned iOS app
         run: flutter build ios --release --no-codesign
 
-      - name: Package iOS app
-        run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app build/ios/iphoneos/retro-tech-marketplace-ios-unsigned.zip
+      - name: Package unsigned iOS IPA
+        run: |
+          mkdir -p build/ios/iphoneos/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/Runner.app
+          ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Payload build/ios/iphoneos/retro-tech-marketplace-ios-unsigned.ipa
 
       - name: Upload iOS app
         uses: actions/upload-artifact@v4
         with:
-          name: retro-tech-marketplace-ios-unsigned
-          path: retro_tech_marketplace/build/ios/iphoneos/retro-tech-marketplace-ios-unsigned.zip
+          name: retro-tech-marketplace-ios-unsigned-ipa
+          path: retro_tech_marketplace/build/ios/iphoneos/retro-tech-marketplace-ios-unsigned.ipa
           if-no-files-found: error
 
   release:
@@ -106,5 +109,5 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" dist/* \
             --title "$GITHUB_REF_NAME" \
-            --notes "Android and unsigned iOS builds for $GITHUB_REF_NAME." \
+            --notes "Android APK and unsigned iOS IPA for $GITHUB_REF_NAME." \
             --latest
