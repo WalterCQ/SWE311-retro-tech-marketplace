@@ -7,7 +7,6 @@ import '../../widgets/glass_scaffold.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
 import '../../widgets/update_prompt.dart';
-import '../profile/edit_profile_screen.dart';
 import 'help_support_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -57,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             style: AppTheme.body.copyWith(fontSize: 12),
                           ),
                           Text(
-                            'Manage your marketplace preferences',
+                            'Profile, privacy, support, and app updates',
                             style: AppTheme.body.copyWith(fontSize: 11),
                           ),
                         ],
@@ -69,15 +68,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(height: 18),
               GlassListSection(
                 children: [
-                  _SettingsRow(
-                    Icons.person_outline_rounded,
-                    'Account',
-                    openPage: EditProfileScreen(store: widget.store),
-                    routeSettings: const RouteSettings(name: '/edit-profile'),
-                  ),
                   _SettingsSwitch(
                     Icons.notifications_outlined,
                     'Notifications',
+                    'Order, message, and listing activity alerts',
                     widget.store.notifications,
                     (value) {
                       widget.store.setNotifications(value);
@@ -86,6 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _SettingsSwitch(
                     Icons.lock_outline_rounded,
                     'Privacy',
+                    'Keep your saved items and profile activity private',
                     widget.store.privacy,
                     (value) {
                       widget.store.setPrivacy(value);
@@ -94,12 +89,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _SettingsRow(
                     Icons.shield_outlined,
                     'Help Center',
+                    subtitle: 'Selling, payments, safety, and order support',
                     openPage: const HelpSupportScreen(),
                     routeSettings: const RouteSettings(name: '/help'),
                   ),
                   _SettingsRow(
                     Icons.system_update_alt_rounded,
                     'App Update',
+                    subtitle: 'Check GitHub Releases for the latest APK',
                     value: checkingUpdates
                         ? 'Checking...'
                         : 'v${UpdateService.fallbackVersion}',
@@ -120,11 +117,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  onTap: () => Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  ),
+                  onTap: () async {
+                    await widget.store.signOut();
+                    if (!context.mounted) return;
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/login',
+                      (route) => false,
+                    );
+                  },
                 ),
               ),
             ],
@@ -151,6 +152,7 @@ class _SettingsRow extends StatelessWidget {
   const _SettingsRow(
     this.icon,
     this.label, {
+    this.subtitle,
     this.value,
     this.openPage,
     this.routeSettings,
@@ -159,6 +161,7 @@ class _SettingsRow extends StatelessWidget {
 
   final IconData icon;
   final String label;
+  final String? subtitle;
   final String? value;
   final Widget? openPage;
   final RouteSettings? routeSettings;
@@ -171,20 +174,34 @@ class _SettingsRow extends StatelessWidget {
       return OpenMotionListRow(
         icon: icon,
         title: label,
+        subtitle: subtitle,
         value: value,
         openPage: page,
         routeSettings: routeSettings,
       );
     }
-    return GlassListRow(icon: icon, title: label, value: value, onTap: onTap);
+    return GlassListRow(
+      icon: icon,
+      title: label,
+      subtitle: subtitle,
+      value: value,
+      onTap: onTap,
+    );
   }
 }
 
 class _SettingsSwitch extends StatelessWidget {
-  const _SettingsSwitch(this.icon, this.label, this.value, this.onChanged);
+  const _SettingsSwitch(
+    this.icon,
+    this.label,
+    this.subtitle,
+    this.value,
+    this.onChanged,
+  );
 
   final IconData icon;
   final String label;
+  final String subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
@@ -196,6 +213,7 @@ class _SettingsSwitch extends StatelessWidget {
       activeThumbColor: AppTheme.blue,
       secondary: Icon(icon, color: AppTheme.blue),
       title: Text(label, style: TextStyle(fontWeight: FontWeight.w800)),
+      subtitle: Text(subtitle, style: AppTheme.body.copyWith(fontSize: 11)),
     );
   }
 }

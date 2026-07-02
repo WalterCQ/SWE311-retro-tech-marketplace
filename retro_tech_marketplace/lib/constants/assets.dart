@@ -8,6 +8,10 @@ class Assets {
   static const appleIcon = 'assets/images/apple-logo.svg';
   static const facebookIcon = 'assets/images/facebook-logo.svg';
   static const latestNewsThumbnail = 'assets/images/latest-news-thumbnail.png';
+  static const helpOrders = 'assets/images/help-orders.png';
+  static const helpSelling = 'assets/images/help-selling.png';
+  static const helpPayments = 'assets/images/help-payments.png';
+  static const helpSafety = 'assets/images/help-safety.png';
   static const v60 = 'assets/images/motorola-v60.png';
   static const v60GallerySide = 'assets/images/motorola-v60-gallery-side.png';
   static const v60GalleryBack = 'assets/images/motorola-v60-gallery-back.png';

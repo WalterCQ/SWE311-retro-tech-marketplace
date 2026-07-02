@@ -204,6 +204,7 @@ class GlassListRow extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.subtitle,
     this.value,
     this.badge,
     this.onTap,
@@ -214,6 +215,7 @@ class GlassListRow extends StatelessWidget {
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final String? value;
   final String? badge;
   final VoidCallback? onTap;
@@ -231,6 +233,9 @@ class GlassListRow extends StatelessWidget {
         minVerticalPadding: dense ? 4 : null,
         leading: Icon(icon, color: iconColor),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: subtitle == null
+            ? null
+            : Text(subtitle!, style: AppTheme.body.copyWith(fontSize: 11)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import '../constants/assets.dart';
 import '../constants/theme.dart';
@@ -77,15 +79,33 @@ class ProductImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = Image.asset(
-      asset,
-      width: width,
-      height: height,
-      fit: fit,
-      cacheWidth: imageCacheDimension(context, width, logicalHeight: height),
-      errorBuilder: (context, error, stackTrace) =>
-          Icon(Icons.devices_rounded, size: width * 0.56),
-    );
+    final image = asset.startsWith('assets/')
+        ? Image.asset(
+            asset,
+            width: width,
+            height: height,
+            fit: fit,
+            cacheWidth: imageCacheDimension(
+              context,
+              width,
+              logicalHeight: height,
+            ),
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.devices_rounded, size: width * 0.56),
+          )
+        : Image.file(
+            File(asset),
+            width: width,
+            height: height,
+            fit: fit,
+            cacheWidth: imageCacheDimension(
+              context,
+              width,
+              logicalHeight: height,
+            ),
+            errorBuilder: (context, error, stackTrace) =>
+                Icon(Icons.devices_rounded, size: width * 0.56),
+          );
     final tag = heroTag;
     if (tag == null) return image;
     return Hero(

@@ -254,6 +254,7 @@ class OpenMotionListRow extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.openPage,
+    this.subtitle,
     this.value,
     this.badge,
     this.iconColor = AppTheme.blue,
@@ -265,6 +266,7 @@ class OpenMotionListRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget openPage;
+  final String? subtitle;
   final String? value;
   final String? badge;
   final Color iconColor;
@@ -281,6 +283,7 @@ class OpenMotionListRow extends StatelessWidget {
       closedBuilder: (openContainer) => GlassListRow(
         icon: icon,
         title: title,
+        subtitle: subtitle,
         value: value,
         badge: badge,
         iconColor: iconColor,
@@ -298,11 +301,13 @@ class TopBar extends StatelessWidget {
     required this.title,
     this.trailing,
     this.onTrailingTap,
+    this.showTrailing = true,
   });
 
   final String title;
   final IconData? trailing;
   final VoidCallback? onTrailingTap;
+  final bool showTrailing;
 
   @override
   Widget build(BuildContext context) {
@@ -321,10 +326,13 @@ class TopBar extends StatelessWidget {
             style: AppTheme.h2.copyWith(fontSize: 18),
           ),
         ),
-        CircleGlassButton(
-          icon: trailing ?? Icons.more_horiz_rounded,
-          onTap: onTrailingTap,
-        ),
+        if (showTrailing)
+          CircleGlassButton(
+            icon: trailing ?? Icons.more_horiz_rounded,
+            onTap: onTrailingTap,
+          )
+        else
+          const SizedBox(width: 46, height: 46),
       ],
     );
   }

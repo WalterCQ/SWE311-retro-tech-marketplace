@@ -3,6 +3,7 @@ import '../../constants/theme.dart';
 import '../../store/listing_store.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/interaction_helpers.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -29,6 +30,11 @@ class SellerProfileScreen extends StatelessWidget {
               TopBar(
                 title: 'Seller Profile',
                 trailing: Icons.ios_share_rounded,
+                onTrailingTap: () => copyShareText(
+                  context,
+                  label: 'Seller profile',
+                  text: 'RetroTech seller profile: $seller.',
+                ),
               ),
               SizedBox(height: 24),
               Center(child: LogoMark(size: 112, heroTag: sellerLogoHeroTag)),

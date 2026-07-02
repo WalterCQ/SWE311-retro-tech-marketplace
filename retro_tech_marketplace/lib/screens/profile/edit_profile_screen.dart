@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/theme.dart';
 import '../../models/user_profile.dart';
 import '../../store/listing_store.dart';
 import '../../widgets/glass_input.dart';
@@ -17,6 +16,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
   late final _displayName = TextEditingController(
     text: widget.store.profile.displayName,
   );
@@ -34,6 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final _contact = TextEditingController(
     text: widget.store.profile.preferredContact,
   );
+  bool _submitted = false;
 
   @override
   void dispose() {
@@ -52,86 +53,120 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return FormShell(
       title: 'Edit Profile',
       action: 'Save Profile',
-      onSave: () {
-        _save();
-      },
+      onSave: _save,
+      formKey: _formKey,
+      autovalidateMode: _submitted
+          ? AutovalidateMode.onUserInteraction
+          : AutovalidateMode.disabled,
       children: [
         Center(child: LogoMark(size: 110, heroTag: accountLogoHeroTag)),
         SizedBox(height: 20),
+        FormSection(
+          title: 'Public Profile',
+          subtitle: 'These details appear on your profile and buyer messages.',
+        ),
         GlassInput(
           controller: _displayName,
-          hint: 'Display Name',
+          label: 'Display Name',
+          hint: 'Retro Tech',
           icon: Icons.person_outline_rounded,
+          requiredField: true,
+          textInputAction: TextInputAction.next,
+          validator: _required('Enter a display name.'),
         ),
         SizedBox(height: 12),
         GlassInput(
           controller: _username,
-          hint: 'Username',
+          label: 'Username',
+          hint: '@retrotech',
           icon: Icons.alternate_email_rounded,
+          requiredField: true,
+          textInputAction: TextInputAction.next,
+          validator: _required('Enter a username.'),
         ),
         SizedBox(height: 12),
         GlassInput(
           controller: _email,
-          hint: 'Email',
+          label: 'Email',
+          hint: 'retro@tech.market',
           icon: Icons.email_outlined,
+          requiredField: true,
+          keyboardType: TextInputType.emailAddress,
+          textInputAction: TextInputAction.next,
+          validator: _emailValidator,
         ),
         SizedBox(height: 12),
         GlassInput(
           controller: _bio,
-          hint: 'Bio',
+          label: 'Bio',
+          hint: 'Collect rare. Live timeless.',
           icon: Icons.edit_outlined,
           maxLines: 2,
+          textInputAction: TextInputAction.newline,
         ),
         SizedBox(height: 12),
         GlassInput(
           controller: _location,
-          hint: 'Location',
+          label: 'Location',
+          hint: 'Kuala Lumpur',
           icon: Icons.location_on_outlined,
+          textInputAction: TextInputAction.next,
         ),
         SizedBox(height: 24),
-        Text('Marketplace Identity', style: AppTheme.h2.copyWith(fontSize: 16)),
-        SizedBox(height: 12),
+        FormSection(
+          title: 'Marketplace Identity',
+          subtitle: 'Use a seller name and contact method buyers can trust.',
+        ),
         GlassInput(
           controller: _seller,
-          hint: 'Seller Name',
+          label: 'Seller Name',
+          hint: 'RetroTech Collector',
           icon: Icons.storefront_outlined,
+          requiredField: true,
+          textInputAction: TextInputAction.next,
+          validator: _required('Enter a seller name.'),
         ),
         SizedBox(height: 12),
         GlassInput(
           controller: _contact,
-          hint: 'Preferred Contact',
+          label: 'Preferred Contact',
+          hint: 'In-app message',
           icon: Icons.chat_bubble_outline_rounded,
+          textInputAction: TextInputAction.done,
         ),
       ],
     );
   }
 
   Future<void> _save() async {
+    setState(() => _submitted = true);
+    if (!_formKey.currentState!.validate()) return;
+
     await widget.store.saveProfile(
       UserProfile(
-        displayName: _displayName.text.trim().isEmpty
-            ? UserProfile.defaults.displayName
-            : _displayName.text.trim(),
-        username: _username.text.trim().isEmpty
-            ? UserProfile.defaults.username
-            : _username.text.trim(),
-        email: _email.text.trim().isEmpty
-            ? UserProfile.defaults.email
-            : _email.text.trim(),
-        bio: _bio.text.trim().isEmpty
-            ? UserProfile.defaults.bio
-            : _bio.text.trim(),
-        location: _location.text.trim().isEmpty
-            ? UserProfile.defaults.location
-            : _location.text.trim(),
-        sellerName: _seller.text.trim().isEmpty
-            ? UserProfile.defaults.sellerName
-            : _seller.text.trim(),
-        preferredContact: _contact.text.trim().isEmpty
-            ? UserProfile.defaults.preferredContact
-            : _contact.text.trim(),
+        displayName: _displayName.text.trim(),
+        username: _username.text.trim(),
+        email: _email.text.trim(),
+        bio: _bio.text.trim(),
+        location: _location.text.trim(),
+        sellerName: _seller.text.trim(),
+        preferredContact: _contact.text.trim(),
       ),
     );
     if (mounted) Navigator.pop(context);
+  }
+
+  FormFieldValidator<String> _required(String message) {
+    return (value) => value == null || value.trim().isEmpty ? message : null;
+  }
+
+  String? _emailValidator(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return 'Enter an email address.';
+    final validEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    if (!validEmail.hasMatch(email)) {
+      return 'Enter a valid email address.';
+    }
+    return null;
   }
 }

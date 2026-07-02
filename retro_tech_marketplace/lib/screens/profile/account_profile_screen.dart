@@ -8,7 +8,6 @@ import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
 import '../checkout/order_confirmation_screen.dart';
 import '../product/my_listings_screen.dart';
-import '../settings/chat_thread_screen.dart';
 import '../settings/settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'saved_items_screen.dart';
@@ -65,7 +64,20 @@ class AccountProfileScreen extends StatelessWidget {
                 routeSettings: const RouteSettings(name: '/edit-profile'),
                 closedBuilder: (openContainer) => TextButton(
                   onPressed: openContainer,
-                  child: Text('Edit Profile', style: AppTheme.label),
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppTheme.blue,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(112, 36),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: Text(
+                    'Edit Profile',
+                    style: AppTheme.label.copyWith(color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -118,14 +130,6 @@ class AccountProfileScreen extends StatelessWidget {
                   null,
                   openPage: SavedItemsScreen(store: store),
                   routeSettings: const RouteSettings(name: '/saved-items'),
-                ),
-                ProfileRow(
-                  'Messages',
-                  '8',
-                  Icons.chat_bubble_outline_rounded,
-                  null,
-                  openPage: const ChatThreadScreen(),
-                  routeSettings: const RouteSettings(name: '/chat'),
                 ),
               ],
             ),
@@ -240,6 +244,10 @@ class CommunityPostCard extends StatelessWidget {
     required this.time,
     required this.text,
     required this.asset,
+    this.handle,
+    this.likes,
+    this.replies,
+    this.sourceLabel,
     this.onTap,
   });
 
@@ -247,59 +255,112 @@ class CommunityPostCard extends StatelessWidget {
   final String time;
   final String text;
   final String asset;
+  final String? handle;
+  final int? likes;
+  final int? replies;
+  final String? sourceLabel;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final metrics = ResponsiveMetrics.of(context);
+    final compact = metrics.compact;
+    final replyLabel = replies == null ? null : '${replies!}';
+    final likeLabel = likes == null ? null : '${likes!}';
+
     return LiquidPressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(26),
       glowColor: AppTheme.blue,
       child: GlassCard(
-        margin: EdgeInsets.only(bottom: 14),
-        padding: EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.fromLTRB(14, 14, 14, 12),
+        radius: 26,
+        opacity: 0.48,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipOval(child: ProductImage(asset: asset, width: 44, height: 44)),
+            ClipOval(
+              child: ProductImage(
+                asset: asset,
+                width: compact ? 40 : 44,
+                height: compact ? 40 : 44,
+              ),
+            ),
             SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (sourceLabel != null) ...[
+                    Text(
+                      sourceLabel!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTheme.label.copyWith(color: AppTheme.muted),
+                    ),
+                    SizedBox(height: 5),
+                  ],
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(
-                          user,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontWeight: FontWeight.w900),
+                        child: Wrap(
+                          spacing: 7,
+                          runSpacing: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              user,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                            if (handle != null)
+                              Text(
+                                handle!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTheme.body.copyWith(fontSize: 12),
+                              ),
+                          ],
                         ),
                       ),
                       SizedBox(width: 8),
-                      Text(time, style: AppTheme.body.copyWith(fontSize: 10)),
+                      Text(time, style: AppTheme.body.copyWith(fontSize: 11)),
                     ],
                   ),
-                  SizedBox(height: 6),
+                  SizedBox(height: 8),
                   Text(
                     text,
-                    style: AppTheme.body.copyWith(color: AppTheme.ink),
+                    style: AppTheme.body.copyWith(
+                      color: AppTheme.ink,
+                      fontSize: 14.5,
+                      height: 1.34,
+                    ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(
-                        Icons.favorite_border_rounded,
-                        color: AppTheme.red,
-                        size: 17,
-                      ),
-                      SizedBox(width: 8),
-                      Icon(
+                      _CommunityCardAction(
                         Icons.chat_bubble_outline_rounded,
+                        label: replyLabel,
                         color: AppTheme.blue,
-                        size: 17,
                       ),
+                      SizedBox(width: 16),
+                      _CommunityCardAction(
+                        Icons.favorite_border_rounded,
+                        label: likeLabel,
+                        color: AppTheme.red,
+                      ),
+                      SizedBox(width: 16),
+                      _CommunityCardAction(
+                        Icons.repeat_rounded,
+                        label: null,
+                        color: AppTheme.muted,
+                      ),
+                      const Spacer(),
+                      Icon(Icons.chevron_right_rounded, color: AppTheme.muted),
                     ],
                   ),
                 ],
@@ -308,6 +369,31 @@ class CommunityPostCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CommunityCardAction extends StatelessWidget {
+  const _CommunityCardAction(this.icon, {this.label, required this.color});
+
+  final IconData icon;
+  final String? label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 17),
+        if (label != null) ...[
+          SizedBox(width: 5),
+          Text(
+            label!,
+            style: AppTheme.label.copyWith(color: color, fontSize: 12),
+          ),
+        ],
+      ],
     );
   }
 }

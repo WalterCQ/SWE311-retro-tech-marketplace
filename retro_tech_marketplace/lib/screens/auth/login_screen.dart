@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../constants/assets.dart';
 import '../../constants/theme.dart';
+import '../../services/demo_auth_service.dart';
 import '../../store/listing_store.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/interaction_helpers.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -116,12 +118,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: AppTheme.body,
                 ),
               ),
-              Text(
-                'Forgot password?',
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.label.copyWith(
-                  color: AppTheme.blue,
-                  fontSize: 10,
+              GestureDetector(
+                key: const ValueKey('forgot-password-link'),
+                onTap: () => showInfoSheet(
+                  context,
+                  icon: Icons.lock_reset_rounded,
+                  title: 'Password reset is not connected',
+                  body:
+                      'RetroTech does not have an email recovery service connected yet. Use your demo account password to sign in.',
+                ),
+                child: Text(
+                  'Forgot password?',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.label.copyWith(
+                    color: AppTheme.blue,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],
@@ -133,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
           ),
           SizedBox(height: 40),
-          Center(child: SocialLoginCluster()),
+          Center(child: SocialLoginCluster(store: widget.store)),
           SizedBox(height: 46),
           Wrap(
             alignment: WrapAlignment.center,
@@ -156,7 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class SocialLoginCluster extends StatelessWidget {
-  const SocialLoginCluster({super.key});
+  const SocialLoginCluster({super.key, required this.store});
+
+  final ListingStore store;
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +229,7 @@ class SocialLoginCluster extends StatelessWidget {
                     height: buttonHeight,
                     iconWidth: 26.4,
                     iconHeight: 26.4,
+                    onTap: () => _signIn(context, DemoAuthProvider.google),
                   ),
                   SizedBox(width: gap),
                   SocialButton(
@@ -224,6 +239,7 @@ class SocialLoginCluster extends StatelessWidget {
                     height: buttonHeight,
                     iconWidth: 24,
                     iconHeight: 30,
+                    onTap: () => _signIn(context, DemoAuthProvider.apple),
                   ),
                   SizedBox(width: gap),
                   SocialButton(
@@ -233,6 +249,7 @@ class SocialLoginCluster extends StatelessWidget {
                     height: buttonHeight,
                     iconWidth: 28.8,
                     iconHeight: 28.8,
+                    onTap: () => _signIn(context, DemoAuthProvider.facebook),
                   ),
                 ],
               ),
@@ -241,6 +258,12 @@ class SocialLoginCluster extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _signIn(BuildContext context, DemoAuthProvider provider) async {
+    await store.signInWithDemoProvider(provider);
+    if (!context.mounted) return;
+    Navigator.pushReplacementNamed(context, '/main');
   }
 }
 
@@ -253,6 +276,7 @@ class SocialButton extends StatelessWidget {
     required this.height,
     required this.iconWidth,
     required this.iconHeight,
+    required this.onTap,
   });
 
   final String asset;
@@ -261,6 +285,7 @@ class SocialButton extends StatelessWidget {
   final double height;
   final double iconWidth;
   final double iconHeight;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +294,7 @@ class SocialButton extends StatelessWidget {
       button: true,
       label: semanticLabel,
       child: LiquidPressable(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
         glowColor: AppTheme.blue,
         pressedScale: 0.96,

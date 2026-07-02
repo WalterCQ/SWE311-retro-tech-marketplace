@@ -71,6 +71,8 @@ class FormShell extends StatelessWidget {
     required this.action,
     required this.onSave,
     required this.children,
+    this.formKey,
+    this.autovalidateMode,
     this.dangerAction,
     this.onDanger,
   });
@@ -79,6 +81,8 @@ class FormShell extends StatelessWidget {
   final String action;
   final VoidCallback onSave;
   final List<Widget> children;
+  final GlobalKey<FormState>? formKey;
+  final AutovalidateMode? autovalidateMode;
   final String? dangerAction;
   final VoidCallback? onDanger;
 
@@ -87,23 +91,27 @@ class FormShell extends StatelessWidget {
     return GlassScaffold(
       child: Stack(
         children: [
-          ListView(
-            padding: EdgeInsets.fromLTRB(
-              22,
-              18,
-              22,
-              dangerAction == null ? 104 : 136,
-            ),
-            children: [
-              TopBar(
-                title: title,
-                trailing: title.contains('Edit')
-                    ? Icons.visibility_outlined
-                    : null,
+          Form(
+            key: formKey,
+            autovalidateMode: autovalidateMode,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                22,
+                18,
+                22,
+                dangerAction == null ? 104 : 136,
               ),
-              SizedBox(height: 22),
-              ...children,
-            ],
+              children: [
+                TopBar(
+                  title: title,
+                  trailing: title.contains('Edit')
+                      ? Icons.visibility_outlined
+                      : null,
+                ),
+                SizedBox(height: 22),
+                ...children,
+              ],
+            ),
           ),
           Positioned(
             left: 22,
@@ -128,6 +136,30 @@ class FormShell extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class FormSection extends StatelessWidget {
+  const FormSection({super.key, required this.title, this.subtitle});
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: 6, bottom: subtitle == null ? 10 : 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: AppTheme.h2.copyWith(fontSize: 16)),
+          if (subtitle != null) ...[
+            SizedBox(height: 4),
+            Text(subtitle!, style: AppTheme.body.copyWith(fontSize: 12)),
+          ],
         ],
       ),
     );

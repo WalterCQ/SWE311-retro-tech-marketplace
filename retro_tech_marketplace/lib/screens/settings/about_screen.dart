@@ -2,11 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../constants/assets.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
 import '../../widgets/image_cache.dart';
+import '../../widgets/interaction_helpers.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -38,7 +38,15 @@ class AboutScreen extends StatelessWidget {
                   onTap: () => popOrMain(context),
                 ),
                 const Spacer(),
-                const AboutIconButton(icon: Icons.ios_share_rounded),
+                AboutIconButton(
+                  icon: Icons.ios_share_rounded,
+                  onTap: () => copyShareText(
+                    context,
+                    label: 'About RetroTech',
+                    text:
+                        'RetroTech is a marketplace and collector community for Y2K electronics.',
+                  ),
+                ),
               ],
             ),
             SizedBox(height: metrics.compact ? 28 : 42),
@@ -62,7 +70,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   TextSpan(
                     text:
-                        ' is the go-to marketplace for collectors and enthusiasts of ',
+                        ' connects collectors with verified sellers, practical tools, and transparent product details for ',
                   ),
                   TextSpan(
                     text: 'Y2K',
@@ -81,7 +89,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   TextSpan(
                     text:
-                        ' devices to rare finds, we bring the best of the past to your future.',
+                        ' devices, rare finds, and restored gear that deserve a reliable second life.',
                   ),
                 ],
               ),
@@ -94,6 +102,13 @@ class AboutScreen extends StatelessWidget {
                   color: aboutRed,
                   size: 42,
                   iconSize: 22,
+                  onTap: () => showInfoSheet(
+                    context,
+                    icon: Icons.flag_outlined,
+                    title: 'Our mission',
+                    body:
+                        'RetroTech makes it easier to discover, verify, and preserve iconic electronics through trusted listings, safer messaging, and a collector-first community.',
+                  ),
                 ),
                 SizedBox(width: metrics.gutter),
                 Expanded(
@@ -125,28 +140,49 @@ class AboutScreen extends StatelessWidget {
                     ValueCard(
                       Icons.favorite_rounded,
                       'Trust & Safety',
-                      'Secure payments\nand verified\nsellers.',
+                      'Verified sellers\nand clearer\ntransactions.',
                       aboutRed,
                       width: cardWidth,
                       iconSize: 18,
+                      onTap: () => showInfoSheet(
+                        context,
+                        icon: Icons.favorite_rounded,
+                        title: 'Trust & Safety',
+                        body:
+                            'RetroTech surfaces seller reputation, payment context, and clear listing details so buyers can make safer decisions.',
+                      ),
                     ),
                     SizedBox(width: gap),
                     ValueCard(
                       Icons.groups_rounded,
                       'Community First',
-                      'Connect with\ncollectors who\nshare your passion.',
+                      'Collectors share\nfinds, repairs,\nand advice.',
                       aboutBlue,
                       width: cardWidth,
                       iconSize: 16,
+                      onTap: () => showInfoSheet(
+                        context,
+                        icon: Icons.groups_rounded,
+                        title: 'Community First',
+                        body:
+                            'The community space is built for collectors to discuss finds, restorations, buying tips, and product history.',
+                      ),
                     ),
                     SizedBox(width: gap),
                     ValueCard(
                       Icons.eco_rounded,
                       'Sustainability',
-                      'Give vintage\ntech a second\nlife together.',
+                      'Vintage tech\ngets a useful\nsecond life.',
                       aboutGreen,
                       width: cardWidth,
                       iconSize: 16,
+                      onTap: () => showInfoSheet(
+                        context,
+                        icon: Icons.eco_rounded,
+                        title: 'Sustainability',
+                        body:
+                            'Buying and restoring older electronics keeps usable devices in circulation and reduces unnecessary waste.',
+                      ),
                     ),
                   ],
                 );
@@ -195,7 +231,21 @@ class AboutScreen extends StatelessWidget {
               },
             ),
             SizedBox(height: metrics.compact ? 28 : 36),
-            const AboutNewsCard(),
+            AboutNewsCard(
+              onTap: () => showInfoSheet(
+                context,
+                icon: Icons.newspaper_rounded,
+                title: 'Transparent Tech Drop',
+                body:
+                    'A new batch of clear-shell phones, players, and accessories is featured for collectors.',
+                actionLabel: 'Explore Collection',
+                onAction: () => Navigator.pushNamed(
+                  context,
+                  '/category',
+                  arguments: 'Phones',
+                ),
+              ),
+            ),
             SizedBox(height: metrics.compact ? 18 : 22),
             const HeadquartersMapCard(),
           ],
@@ -216,16 +266,16 @@ class AboutHeroCopy extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('ABOUT US', style: AboutText.eyebrow),
+        Text('ABOUT RETROTECH', style: AboutText.eyebrow),
         SizedBox(height: compact ? 18 : 22),
-        Text('More than', style: heroStyle),
+        Text('Retro gear,', style: heroStyle),
         RichText(
           text: TextSpan(
             style: heroStyle,
             children: [
-              TextSpan(text: 'a '),
+              TextSpan(text: 'trusted '),
               TextSpan(
-                text: 'Marketplace',
+                text: 'again',
                 style: TextStyle(color: aboutRed),
               ),
               WidgetSpan(
@@ -247,7 +297,7 @@ class AboutHeroCopy extends StatelessWidget {
         ),
         SizedBox(height: compact ? 16 : 20),
         Text(
-          'A community built on trust, passion, and nostalgia.',
+          'A marketplace and community for buying, selling, and preserving Y2K electronics.',
           style: AboutText.subcopy.copyWith(fontSize: compact ? 16 : 17),
         ),
       ],
@@ -263,9 +313,7 @@ const aboutRed = Color(0xFFFF080F);
 const aboutGreen = Color(0xFF0DB238);
 const aboutViolet = Color(0xFF7338F2);
 const _headquartersLocation = LatLng(2.8306875, 101.7024375);
-final _headquartersOpenStreetMapUri = Uri.parse(
-  'https://www.openstreetmap.org/?mlat=2.8306875&mlon=101.7024375#map=16/2.8306875/101.7024375',
-);
+const _headquartersZoom = 16.0;
 
 class AboutText {
   static const baseFont = 'Inter';
@@ -532,7 +580,7 @@ class AboutIconButton extends StatelessWidget {
       width: size,
       height: size,
       child: LiquidPressable(
-        onTap: onTap ?? () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(size / 2),
         glowColor: color,
         child: AboutGlassSurface(
@@ -573,6 +621,7 @@ class ValueCard extends StatelessWidget {
     super.key,
     required this.width,
     required this.iconSize,
+    this.onTap,
   });
 
   final IconData icon;
@@ -581,13 +630,14 @@ class ValueCard extends StatelessWidget {
   final Color color;
   final double width;
   final double iconSize;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final scale = (width / 116).clamp(0.86, 1.08).toDouble();
     final height = (112 * scale).clamp(96.0, 120.0).toDouble();
     return LiquidPressable(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       glowColor: color,
       child: AboutGlassSurface(
@@ -598,7 +648,7 @@ class ValueCard extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: 7 * scale,
-            vertical: 8 * scale,
+            vertical: 7 * scale,
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -609,7 +659,7 @@ class ValueCard extends StatelessWidget {
                 radius: 17 * scale,
                 child: Icon(icon, color: color, size: iconSize * scale),
               ),
-              SizedBox(height: 6 * scale),
+              SizedBox(height: 5 * scale),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
@@ -618,7 +668,7 @@ class ValueCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: 4 * scale),
+              SizedBox(height: 3 * scale),
               Text(
                 text,
                 style: AboutText.valueCopy,
@@ -676,7 +726,9 @@ class Number extends StatelessWidget {
 }
 
 class AboutNewsCard extends StatelessWidget {
-  const AboutNewsCard({super.key});
+  const AboutNewsCard({super.key, required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -684,7 +736,7 @@ class AboutNewsCard extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 340;
         return LiquidPressable(
-          onTap: () {},
+          onTap: onTap,
           borderRadius: BorderRadius.circular(30),
           glowColor: aboutRed,
           child: AboutGlassSurface(
@@ -719,14 +771,14 @@ class AboutNewsCard extends StatelessWidget {
                       Text('LATEST NEWS', style: AboutText.newsEyebrow),
                       SizedBox(height: compact ? 3 : 4),
                       Text(
-                        'New Arrivals: Transparent Tech',
+                        'Transparent Tech Drop',
                         style: AboutText.newsTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: compact ? 2 : 3),
                       Text(
-                        'Explore rare transparent gadgets',
+                        'Clear-shell devices curated for collectors',
                         style: AboutText.newsCopy,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -752,18 +804,39 @@ class AboutNewsCard extends StatelessWidget {
   }
 }
 
-class HeadquartersMapCard extends StatelessWidget {
+class HeadquartersMapCard extends StatefulWidget {
   const HeadquartersMapCard({super.key});
+
+  @override
+  State<HeadquartersMapCard> createState() => _HeadquartersMapCardState();
+}
+
+class _HeadquartersMapCardState extends State<HeadquartersMapCard> {
+  late final MapController _mapController = MapController();
+
+  void _centerOnHeadquarters() {
+    _mapController.move(
+      _headquartersLocation,
+      _headquartersZoom,
+      id: 'headquarters-recenter',
+    );
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 340;
-        final mapHeight = compact ? 142.0 : 152.0;
+        final mapHeight = compact ? 260.0 : 280.0;
         return AboutGlassSurface(
           width: constraints.maxWidth,
-          height: compact ? 240 : 252,
+          height: compact ? 368 : 392,
           radius: 30,
           opacity: 0.58,
           child: Padding(
@@ -771,7 +844,10 @@ class HeadquartersMapCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HeadquartersMapPreview(height: mapHeight),
+                HeadquartersMapPreview(
+                  height: mapHeight,
+                  mapController: _mapController,
+                ),
                 SizedBox(height: compact ? 10 : 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -793,21 +869,21 @@ class HeadquartersMapCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'OpenStreetMap',
+                            'RETROTECH HUB',
                             style: AboutText.newsEyebrow.copyWith(
                               color: aboutBlue,
                             ),
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'Our Company Headquarters',
+                            'Demo Headquarters',
                             style: AboutText.newsTitle.copyWith(fontSize: 13),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'RPJ2+7X, Sepang, Selangor',
+                            'Sepang, Selangor, Malaysia',
                             style: AboutText.newsCopy.copyWith(fontSize: 10),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -824,22 +900,22 @@ class HeadquartersMapCard extends StatelessWidget {
                     ),
                     SizedBox(width: compact ? 8 : 10),
                     Tooltip(
-                      message: 'Open in OpenStreetMap',
+                      message: 'Center on headquarters',
                       child: SizedBox(
                         width: 42,
                         height: 42,
                         child: LiquidPressable(
-                          onTap: () => _openHeadquartersMap(context),
+                          onTap: _centerOnHeadquarters,
                           borderRadius: BorderRadius.circular(21),
-                          glowColor: aboutBlue,
+                          glowColor: aboutRed,
                           child: AboutGlassSurface(
                             width: 42,
                             height: 42,
                             radius: 21,
                             opacity: 0.52,
                             child: Icon(
-                              Icons.open_in_new_rounded,
-                              color: aboutBlue,
+                              Icons.center_focus_strong_rounded,
+                              color: aboutRed,
                               size: 21,
                             ),
                           ),
@@ -857,22 +933,33 @@ class HeadquartersMapCard extends StatelessWidget {
   }
 }
 
-class HeadquartersMapPreview extends StatelessWidget {
-  const HeadquartersMapPreview({super.key, required this.height});
+class HeadquartersMapPreview extends StatefulWidget {
+  const HeadquartersMapPreview({
+    super.key,
+    required this.height,
+    required this.mapController,
+  });
 
   final double height;
+  final MapController mapController;
 
+  @override
+  State<HeadquartersMapPreview> createState() => _HeadquartersMapPreviewState();
+}
+
+class _HeadquartersMapPreviewState extends State<HeadquartersMapPreview> {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: SizedBox(
-        height: height,
+        height: widget.height,
         width: double.infinity,
         child: FlutterMap(
+          mapController: widget.mapController,
           options: const MapOptions(
             initialCenter: _headquartersLocation,
-            initialZoom: 16,
+            initialZoom: _headquartersZoom,
             minZoom: 13,
             maxZoom: 18,
             interactionOptions: InteractionOptions(
@@ -910,45 +997,9 @@ class HeadquartersMapPreview extends StatelessWidget {
                 ),
               ],
             ),
-            SimpleAttributionWidget(
-              source: Text(
-                'OpenStreetMap contributors',
-                style: AboutText.metricLabel.copyWith(
-                  color: aboutInk,
-                  fontSize: 8,
-                ),
-              ),
-              backgroundColor: Colors.white.withValues(alpha: 0.86),
-              alignment: Alignment.bottomLeft,
-              onTap: () {
-                launchUrl(
-                  Uri.parse('https://www.openstreetmap.org/copyright'),
-                  mode: LaunchMode.externalApplication,
-                );
-              },
-            ),
           ],
         ),
       ),
     );
   }
-}
-
-Future<void> _openHeadquartersMap(BuildContext context) async {
-  final opened = await launchUrl(
-    _headquartersOpenStreetMapUri,
-    mode: LaunchMode.externalApplication,
-  );
-  if (opened || !context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        'Unable to open OpenStreetMap.',
-        style: TextStyle(fontWeight: FontWeight.w700),
-      ),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: aboutInk,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-    ),
-  );
 }

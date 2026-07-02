@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:retro_tech_marketplace/app.dart';
 import 'package:retro_tech_marketplace/constants/assets.dart';
@@ -6,19 +7,23 @@ import 'package:retro_tech_marketplace/data/listing_repository.dart';
 import 'package:retro_tech_marketplace/models/listing.dart';
 import 'package:retro_tech_marketplace/models/order_record.dart';
 import 'package:retro_tech_marketplace/models/user_profile.dart';
+import 'package:retro_tech_marketplace/services/demo_auth_service.dart';
 import 'package:retro_tech_marketplace/store/listing_store.dart';
 import 'package:retro_tech_marketplace/store/seed_data.dart';
 import 'package:retro_tech_marketplace/constants/theme.dart';
 import 'package:retro_tech_marketplace/screens/settings/help_support_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/chat_thread_screen.dart';
 import 'package:retro_tech_marketplace/screens/settings/settings_screen.dart';
+import 'package:retro_tech_marketplace/screens/auth/registration_screen.dart';
 import 'package:retro_tech_marketplace/screens/checkout/checkout_screen.dart';
 import 'package:retro_tech_marketplace/screens/checkout/order_confirmation_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/category_detail_screen.dart';
+import 'package:retro_tech_marketplace/screens/product/listing_form_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/my_listings_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/product_detail_screen.dart';
 import 'package:retro_tech_marketplace/screens/product/product_video_player.dart';
 import 'package:retro_tech_marketplace/screens/profile/account_profile_screen.dart';
+import 'package:retro_tech_marketplace/screens/profile/edit_profile_screen.dart';
 import 'package:retro_tech_marketplace/screens/profile/payment_methods_screen.dart';
 import 'package:retro_tech_marketplace/screens/profile/seller_profile_screen.dart';
 import 'package:retro_tech_marketplace/services/update_service.dart';
@@ -28,6 +33,15 @@ import 'package:retro_tech_marketplace/screens/settings/about_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(SystemChannels.platform, (
+        MethodCall methodCall,
+      ) async {
+        if (methodCall.method == 'Clipboard.setData') return null;
+        return null;
+      });
+
   test('release version comparison handles tags and build suffixes', () {
     expect(compareVersionNames('v1.0.5', '1.0.4+5'), greaterThan(0));
     expect(compareVersionNames('1.0.4', 'v1.0.4+5'), 0);
@@ -98,10 +112,12 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   }
 
-  Future<void> pumpRetroTech(WidgetTester tester) async {
+  Future<void> pumpRetroTech(WidgetTester tester, {ListingStore? store}) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     SharedPreferences.setMockInitialValues({});
     setPhoneSize(tester);
-    await tester.pumpWidget(RetroTechApp(store: testStore()));
+    await tester.pumpWidget(RetroTechApp(store: store ?? testStore()));
     await tester.pumpAndSettle();
   }
 
@@ -126,6 +142,51 @@ void main() {
     expect(find.text('Log In'), findsOneWidget);
   });
 
+  testWidgets('social auth buttons start demo sessions', (
+    WidgetTester tester,
+  ) async {
+    final cases = <String, DemoAuthProvider>{
+      'Continue with Google': DemoAuthProvider.google,
+      'Continue with Apple': DemoAuthProvider.apple,
+      'Continue with Facebook': DemoAuthProvider.facebook,
+    };
+
+    for (final entry in cases.entries) {
+      final store = testStore();
+      await pumpRetroTech(tester, store: store);
+
+      await tester.tap(find.bySemanticsLabel(entry.key));
+      await tester.pumpAndSettle();
+
+      expect(store.demoAuthProvider, entry.value);
+      expect(store.profile.displayName, entry.value.profile.displayName);
+      expect(
+        find.text('Buy, sell, and collect authentic\nY2K electronics.'),
+        findsOneWidget,
+      );
+    }
+
+    await pumpRetroTech(tester);
+
+    await tester.tap(find.byKey(const ValueKey('forgot-password-link')));
+    await tester.pumpAndSettle();
+    expect(find.text('Password reset is not connected'), findsOneWidget);
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: RegistrationScreen(store: testStore()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('terms-policy-link')));
+    await tester.pumpAndSettle();
+    expect(find.text('Terms & Privacy Policy'), findsWidgets);
+    expect(find.textContaining('coursework demo'), findsOneWidget);
+  });
+
   testWidgets('home segments switch between market and community', (
     WidgetTester tester,
   ) async {
@@ -133,6 +194,7 @@ void main() {
     await logIn(tester);
 
     expect(find.textContaining('Buy, sell'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-search-button')), findsOneWidget);
 
     await tester.tap(find.text('Community'));
     await tester.pumpAndSettle();
@@ -143,24 +205,163 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.byKey(const ValueKey('home-search-button')), findsNothing);
+    expect(find.text('For you'), findsWidgets);
+    expect(find.text('Following'), findsOneWidget);
+
+    await tester.tap(find.text('Following').first);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.text('I can include the original earbuds for the Walkman bundle.'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reply to VintageAudioCo'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'Can you share photos?');
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Can you share photos?'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_ios_new_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Market'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('home-search-button')), findsOneWidget);
   });
 
-  testWidgets('category search filters visible categories', (
+  testWidgets('home search opens category product search', (
     WidgetTester tester,
   ) async {
     await pumpRetroTech(tester);
     await logIn(tester);
 
-    await tester.tap(find.text('Categories').last);
+    expect(find.byKey(const ValueKey('category-search-field')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('home-search-button')));
     await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('category-search-field')), findsOneWidget);
+    expect(tester.testTextInput.isVisible, isTrue);
+
     await tester.enterText(
       find.byKey(const ValueKey('category-search-field')),
-      'Gaming',
+      'gb',
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Gaming'), findsWidgets);
+    final categoriesScreen = find.byType(CategoriesScreen);
+    expect(
+      find.descendant(of: categoriesScreen, matching: find.text('RM 899.00')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: categoriesScreen, matching: find.text('RM 1599.00')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: categoriesScreen, matching: find.text('Phones')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('category search expands and filters all products', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: GlassScaffold(child: CategoriesScreen(store: store)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('category-search-field')), findsNothing);
+    expect(find.text('Phones'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('category-search-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('category-search-field')), findsOneWidget);
+    expect(tester.testTextInput.isVisible, isTrue);
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Filter Categories'), findsOneWidget);
+    await tester.tap(find.text('Gaming').last);
+    await tester.pumpAndSettle();
+    expect(find.text('RM 899.00'), findsOneWidget);
     expect(find.text('Phones'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('category-search-field')),
+      'disc',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('RM 999.00'), findsOneWidget);
+    expect(find.text('RM 1599.00'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('category-search-field')),
+      '',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Phones'), findsOneWidget);
+    expect(find.text('Audio'), findsOneWidget);
+    expect(find.text('RM 999.00'), findsNothing);
+  });
+
+  testWidgets('category cards show real listing counts', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: GlassScaffold(child: CategoriesScreen(store: store)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 items'), findsOneWidget);
+    expect(find.text('4 items'), findsOneWidget);
+    expect(find.text('84 items'), findsNothing);
+
+    final wearablesCard = find.byKey(const ValueKey('category-card-Wearables'));
+    expect(
+      find.descendant(of: wearablesCard, matching: find.text('0 items')),
+      findsOneWidget,
+    );
+
+    await store.add(
+      seedListings.first.copyWith(
+        id: 'clear-watch-test',
+        title: 'Clear Watch',
+        subtitle: 'Digital',
+        category: 'Wearables',
+        imageAsset: Assets.watch,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.descendant(of: wearablesCard, matching: find.text('1 item')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: wearablesCard, matching: find.text('0 items')),
+      findsNothing,
+    );
   });
 
   testWidgets('FAQ card expands on tap', (WidgetTester tester) async {
@@ -174,6 +375,10 @@ void main() {
       find.text('Message sellers securely from any product page.'),
       findsNothing,
     );
+    expect(
+      find.byKey(const ValueKey('faq-image-${Assets.helpOrders}')),
+      findsNothing,
+    );
 
     await tester.tap(find.text('How do I contact a seller?'));
     await tester.pumpAndSettle();
@@ -182,6 +387,20 @@ void main() {
       find.text('Message sellers securely from any product page.'),
       findsOneWidget,
     );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('faq-card-How do I contact a seller?')),
+        matching: find.byKey(const ValueKey('faq-image-${Assets.helpOrders}')),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('help-search-field')),
+      'receipt',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Where can I find my order receipt?'), findsOneWidget);
   });
 
   testWidgets('chat input sends local message', (WidgetTester tester) async {
@@ -199,6 +418,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Can you send more photos?'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Conversation details'), findsOneWidget);
   });
 
   testWidgets('favorite button toggles selected state', (
@@ -219,6 +442,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.ios_share_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Product details copied to clipboard.'), findsOneWidget);
   });
 
   testWidgets('profile changes sync into account and settings screens', (
@@ -264,6 +491,149 @@ void main() {
     expect(find.text('Language'), findsNothing);
     expect(find.text('Currency'), findsNothing);
     expect(find.text('Theme'), findsNothing);
+  });
+
+  testWidgets('listing form validates required fields before publishing', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: ListingFormScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Publish Listing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a product title.'), findsOneWidget);
+    expect(find.text('Enter a price.'), findsOneWidget);
+    expect(store.listings, isEmpty);
+  });
+
+  testWidgets('listing form rejects invalid price and preserves input', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: ListingFormScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Game Boy Pocket');
+    await tester.enterText(fields.at(1), 'abc');
+    await tester.tap(find.text('Publish Listing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a valid number.'), findsOneWidget);
+    expect(find.text('Game Boy Pocket'), findsOneWidget);
+    expect(store.listings, isEmpty);
+  });
+
+  testWidgets('valid listing form creates a published listing', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: ListingFormScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Game Boy Pocket');
+    await tester.enterText(fields.at(1), '429.50');
+    await tester.tap(find.text('Audio'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gaming').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Used - Excellent'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Used - Good').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Publish Listing'));
+    await tester.pumpAndSettle();
+
+    expect(store.listings, hasLength(1));
+    expect(store.listings.first.title, 'Game Boy Pocket');
+    expect(store.listings.first.category, 'Gaming');
+    expect(store.listings.first.price, 429.50);
+    expect(store.listings.first.condition, 'Used - Good');
+    expect(store.listings.first.status, 'Published');
+  });
+
+  testWidgets('edit profile validates email before saving', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: EditProfileScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(2), 'not-an-email');
+    await tester.tap(find.text('Save Profile'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    expect(store.profile.email, UserProfile.defaults.email);
+  });
+
+  testWidgets('delete listing waits for explicit confirmation', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = testStore();
+    await store.load();
+    final listing = store.listings.firstWhere(
+      (item) => item.status != 'Draft' && item.status != 'Sold',
+    );
+    setPhoneSize(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        home: MyListingsScreen(store: store),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.delete_outline_rounded).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Delete Listing?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(store.byId(listing.id), isNotNull);
+
+    await tester.tap(find.byIcon(Icons.delete_outline_rounded).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(store.byId(listing.id), isNull);
   });
 
   testWidgets('payment selection updates checkout and orders can be tracked', (
@@ -358,9 +728,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Following'), findsOneWidget);
     expect(store.isFollowing('VintageAudioCo'), isTrue);
+
+    await tester.tap(find.byIcon(Icons.ios_share_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Seller profile copied to clipboard.'), findsOneWidget);
   });
 
-  testWidgets('filter pills update my listings, inbox, and help results', (
+  testWidgets('my listings, inbox, and help results show expected content', (
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -375,16 +749,38 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('iMac G3'), findsNothing);
-    await tester.tap(find.text('Drafts').last);
-    await tester.pumpAndSettle();
-    expect(find.textContaining('iMac G3'), findsOneWidget);
+    expect(find.byIcon(Icons.delete_outline_rounded), findsWidgets);
+    expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
 
     await tester.pumpWidget(
       MaterialApp(theme: AppTheme.theme, home: const InboxScreen()),
     );
     await tester.pumpAndSettle();
     expect(find.text('VintageAudioCo'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.search_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Search Inbox'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const ValueKey('inbox-search-sheet-field')),
+      'Support',
+    );
+    await tester.tap(find.text('Apply Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('No conversations found.'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Filter Inbox'), findsOneWidget);
+    await tester.tap(find.text('Support').last);
+    await tester.pumpAndSettle();
+    expect(find.text('RetroTech Support'), findsOneWidget);
+    expect(find.text('VintageAudioCo'), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.theme, home: const InboxScreen()),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Orders'));
     await tester.pumpAndSettle();
     expect(find.text('RetroTech Orders'), findsOneWidget);
@@ -394,9 +790,21 @@ void main() {
       MaterialApp(theme: AppTheme.theme, home: const HelpSupportScreen()),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.headset_mic_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('RetroTech Support'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Payments'));
     await tester.pumpAndSettle();
     expect(find.text('How are payments protected?'), findsOneWidget);
+    expect(find.text('What is Buyer Protection?'), findsOneWidget);
+    await tester.tap(find.text('Safety'));
+    await tester.pumpAndSettle();
+    expect(find.text('How do I report a fake item?'), findsOneWidget);
+    expect(find.text('How do I keep a purchase safe?'), findsOneWidget);
+    await tester.tap(find.text('Payments'));
+    await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const ValueKey('help-search-field')),
       'fake',
@@ -419,6 +827,18 @@ void main() {
         home: CategoryDetailScreen(store: store, category: 'Audio'),
       ),
     );
+    await tester.pumpAndSettle();
+    expect(find.text('RM 1599.00'), findsWidgets);
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Filter Audio'), findsOneWidget);
+    await tester.tap(find.text('Under RM1000').last);
+    await tester.pumpAndSettle();
+    expect(find.text('RM 1599.00'), findsNothing);
+    expect(find.text('RM 999.00'), findsWidgets);
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('All').last);
     await tester.pumpAndSettle();
     expect(find.text('RM 1599.00'), findsWidgets);
     await tester.tap(find.text('Under RM1000'));
@@ -538,6 +958,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('category-search-field')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('category-search-button')));
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('category-search-field')),
         findsOneWidget,
@@ -547,7 +970,7 @@ void main() {
         MaterialApp(theme: AppTheme.theme, home: const AboutScreen()),
       );
       await tester.pumpAndSettle();
-      expect(find.text('ABOUT US'), findsOneWidget);
+      expect(find.text('ABOUT RETROTECH'), findsOneWidget);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -562,6 +985,55 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Contact Seller'), findsOneWidget);
     }
+  });
+
+  testWidgets('about page actions open visible feedback', (
+    WidgetTester tester,
+  ) async {
+    setPhoneSize(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.theme,
+        onGenerateRoute: (settings) {
+          if (settings.name == '/category') {
+            return MaterialPageRoute<void>(
+              builder: (_) => CategoryDetailScreen(
+                store: testStore(),
+                category: settings.arguments as String? ?? 'Phones',
+              ),
+              settings: settings,
+            );
+          }
+          return null;
+        },
+        home: const AboutScreen(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.tap(find.byIcon(Icons.ios_share_rounded));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('About RetroTech copied to clipboard.'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_forward_rounded).first);
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.text('Our mission'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    await tester.scrollUntilVisible(find.text('Trust & Safety'), 250);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('Trust & Safety'));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.textContaining('seller reputation'), findsOneWidget);
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    await tester.scrollUntilVisible(find.text('Transparent Tech Drop'), 250);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('Transparent Tech Drop'));
+    await tester.pump(const Duration(milliseconds: 350));
+    expect(find.textContaining('clear-shell phones'), findsOneWidget);
   });
 }
 

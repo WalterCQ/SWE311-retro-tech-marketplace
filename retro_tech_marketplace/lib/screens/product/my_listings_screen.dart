@@ -20,8 +20,6 @@ class MyListingsScreen extends StatefulWidget {
 }
 
 class _MyListingsScreenState extends State<MyListingsScreen> {
-  String _filter = 'Published';
-
   @override
   Widget build(BuildContext context) {
     return GlassScaffold(
@@ -30,62 +28,16 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           AnimatedBuilder(
             animation: widget.store,
             builder: (context, _) {
-              final published = widget.store.listings
-                  .where((listing) => _isPublished(listing))
-                  .toList();
-              final drafts = widget.store.listings
-                  .where((listing) => listing.status == 'Draft')
-                  .toList();
-              final sold = widget.store.listings
-                  .where((listing) => listing.status == 'Sold')
-                  .toList();
-              final visible = switch (_filter) {
-                'Drafts' => drafts,
-                'Sold' => sold,
-                _ => published,
-              };
+              final visible = widget.store.listings;
               return ListView(
                 padding: EdgeInsets.fromLTRB(22, 18, 22, 104),
                 children: [
-                  TopBar(
-                    title: 'My Listings',
-                    trailing: Icons.filter_alt_outlined,
-                  ),
-                  SizedBox(height: 18),
-                  Row(
-                    children: [
-                      _ListingCounter('${published.length}', 'Published'),
-                      _ListingCounter('${drafts.length}', 'Drafts'),
-                      _ListingCounter('${sold.length}', 'Sold'),
-                    ],
-                  ),
-                  SizedBox(height: 18),
-                  Row(
-                    children: [
-                      FilterPill(
-                        'Published',
-                        _filter == 'Published',
-                        onTap: () => setState(() => _filter = 'Published'),
-                      ),
-                      FilterPill(
-                        'Drafts',
-                        _filter == 'Drafts',
-                        onTap: () => setState(() => _filter = 'Drafts'),
-                      ),
-                      FilterPill(
-                        'Sold',
-                        _filter == 'Sold',
-                        onTap: () => setState(() => _filter = 'Sold'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 18),
+                  TopBar(title: 'My Listings', showTrailing: false),
+                  SizedBox(height: 14),
                   if (visible.isEmpty)
-                    GlassCard(
-                      child: Text(
-                        'No ${_filter.toLowerCase()} listings.',
-                        style: AppTheme.body,
-                      ),
+                    _EmptyListingsState(
+                      onCreate: () =>
+                          Navigator.pushNamed(context, '/create-listing'),
                     )
                   else
                     ...visible.map(
@@ -113,61 +65,44 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
               );
             },
           ),
-          Positioned(
-            right: 24,
-            bottom: 26,
-            child: GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/create-listing'),
-              child: Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppTheme.red,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.red.withValues(alpha: 0.32),
-                      offset: Offset(0, 10),
-                      blurRadius: 22,
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
-
-  bool _isPublished(Listing listing) {
-    return listing.status != 'Draft' && listing.status != 'Sold';
-  }
 }
 
-class _ListingCounter extends StatelessWidget {
-  const _ListingCounter(this.value, this.label);
+class _EmptyListingsState extends StatelessWidget {
+  const _EmptyListingsState({required this.onCreate});
 
-  final String value;
-  final String label;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GlassCard(
-        margin: EdgeInsets.only(right: 8),
-        padding: EdgeInsets.symmetric(vertical: 12),
-        radius: 20,
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: AppTheme.h2.copyWith(fontSize: 16, color: AppTheme.blue),
-            ),
-            Text(label, style: AppTheme.body.copyWith(fontSize: 10)),
-          ],
-        ),
+    return GlassCard(
+      padding: EdgeInsets.fromLTRB(20, 24, 20, 20),
+      radius: 26,
+      child: Column(
+        children: [
+          Icon(Icons.inventory_2_outlined, color: AppTheme.blue, size: 34),
+          SizedBox(height: 12),
+          Text(
+            'No listings yet',
+            style: AppTheme.h2.copyWith(fontSize: 17),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Create a listing to start managing your items.',
+            style: AppTheme.body.copyWith(fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 16),
+          LiquidButton(
+            label: 'Create Listing',
+            icon: Icons.add_rounded,
+            onPressed: onCreate,
+          ),
+        ],
       ),
     );
   }
@@ -193,19 +128,8 @@ class DeleteConfirmationScreen extends StatelessWidget {
                 return ListView(
                   padding: EdgeInsets.fromLTRB(22, 18, 22, 34),
                   children: [
-                    TopBar(
-                      title: 'My Listings',
-                      trailing: Icons.filter_alt_outlined,
-                    ),
-                    SizedBox(height: 18),
-                    Row(
-                      children: [
-                        _ListingCounter('12', 'Published'),
-                        _ListingCounter('3', 'Drafts'),
-                        _ListingCounter('5', 'Sold'),
-                      ],
-                    ),
-                    SizedBox(height: 18),
+                    TopBar(title: 'My Listings', showTrailing: false),
+                    SizedBox(height: 14),
                     ListingCard(listing: listing, openStore: store),
                     ListingCard(listing: seedListings[1], openStore: store),
                   ],
@@ -280,12 +204,12 @@ class DeleteConfirmationScreen extends StatelessWidget {
   }
 }
 
-Future<void> showDeleteListingDialog(
+Future<bool> showDeleteListingDialog(
   BuildContext context,
   ListingStore store,
   Listing listing,
 ) async {
-  await showDialog<void>(
+  final deleted = await showDialog<bool>(
     context: context,
     barrierColor: Colors.white.withValues(alpha: 0.42),
     builder: (dialogContext) {
@@ -308,14 +232,14 @@ Future<void> showDeleteListingDialog(
             ],
           ),
           content: Text(
-            'This action cannot be undone.\nYour listing will be removed from RetroTech.',
+            'This action cannot be undone.\n"${listing.title}" will be removed from RetroTech.',
             textAlign: TextAlign.center,
             style: AppTheme.body,
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: Text(
                 'Cancel',
                 style: AppTheme.body.copyWith(fontWeight: FontWeight.w900),
@@ -329,7 +253,9 @@ Future<void> showDeleteListingDialog(
               ),
               onPressed: () async {
                 await store.delete(listing.id);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext, true);
+                }
               },
               child: Text('Delete'),
             ),
@@ -338,4 +264,5 @@ Future<void> showDeleteListingDialog(
       );
     },
   );
+  return deleted ?? false;
 }

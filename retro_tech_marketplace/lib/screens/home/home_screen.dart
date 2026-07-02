@@ -5,6 +5,7 @@ import '../../models/listing.dart';
 import '../../store/listing_store.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/interaction_helpers.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -87,21 +88,36 @@ class HomeListingCard extends StatelessWidget {
     final metrics = ResponsiveMetrics.of(context);
     final isMotorola = listing.id == 'motorola-v60';
     final isIpod = listing.id == 'ipod-classic';
-    final bodyCopy = isMotorola
-        ? 'Legendary flip.\nTimeless design.'
-        : isIpod
-        ? '1,000 songs.\nZero skips.'
-        : 'Portable audio.\nCrystal shell.';
-    final imageWidth = isMotorola
+    final usesVerticalImageFrame =
+        listing.imageAsset == Assets.v60 ||
+        listing.imageAsset == Assets.ipodFront ||
+        listing.imageAsset == Assets.walkman ||
+        listing.imageAsset == Assets.gameboy ||
+        listing.imageAsset == Assets.palm ||
+        listing.imageAsset == Assets.watch;
+    final usesSquareImageFrame =
+        listing.imageAsset == Assets.discmanHome ||
+        listing.imageAsset == Assets.imac;
+    final usesWideImageFrame =
+        listing.imageAsset == Assets.minidisc ||
+        listing.imageAsset == Assets.camera;
+    final imageWidth = usesVerticalImageFrame
         ? 176.0
-        : isIpod
-        ? 150.0
+        : usesSquareImageFrame
+        ? 140.0
+        : usesWideImageFrame
+        ? 200.0
         : 167.0;
-    final imageHeight = isMotorola
+    final imageHeight = usesVerticalImageFrame
         ? 264.0
-        : isIpod
-        ? 225.0
+        : usesSquareImageFrame
+        ? 140.0
+        : usesWideImageFrame
+        ? 140.0
         : 115.0;
+    final imageFit = usesSquareImageFrame || usesWideImageFrame
+        ? BoxFit.cover
+        : BoxFit.contain;
     return Container(
       margin: margin ?? EdgeInsets.only(bottom: metrics.gutter + 2),
       child: LiquidPressable(
@@ -160,23 +176,15 @@ class HomeListingCard extends StatelessWidget {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: compact ? 10 : 13),
-                          Text(
-                            bodyCopy,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTheme.body.copyWith(
-                              fontSize: compact ? 12 : 13,
-                              height: 1.28,
-                            ),
-                          ),
                           const Spacer(),
+                          _RatingLine(listing: listing),
+                          SizedBox(height: compact ? 6 : 7),
                           Text(
                             listing.priceLabel,
                             style: TextStyle(
                               color: AppTheme.red,
                               fontSize: 13,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ],
@@ -196,6 +204,7 @@ class HomeListingCard extends StatelessWidget {
                                   asset: listing.imageAsset,
                                   width: imageWidth,
                                   height: imageHeight,
+                                  fit: imageFit,
                                   heroTag: heroTag,
                                 ),
                               ),
@@ -249,9 +258,10 @@ class HomeListingCard extends StatelessWidget {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.store});
+  const HomeScreen({super.key, required this.store, required this.onSearchTap});
 
   final ListingStore store;
+  final VoidCallback onSearchTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -259,6 +269,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _segment = 0;
+  int _communityFeed = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -291,7 +302,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 SizedBox(width: metrics.compact ? 12 : 18),
-                CircleGlassButton(icon: Icons.search_rounded),
+                if (_segment == 0)
+                  CircleGlassButton(
+                    key: const ValueKey('home-search-button'),
+                    icon: Icons.search_rounded,
+                    onTap: widget.onSearchTap,
+                  )
+                else
+                  const SizedBox(width: 46, height: 46),
               ],
             ),
             SizedBox(height: metrics.compact ? 20 : 28),
@@ -382,20 +400,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Widget> _communityContent(BuildContext context) {
+    final posts = [..._communityPosts];
+    if (_communityFeed == 0) {
+      posts.sort(
+        (a, b) => (b.likes + b.replies * 2).compareTo(a.likes + a.replies * 2),
+      );
+    }
+
     return [
-      Text('Community', style: AppTheme.hero.copyWith(fontSize: 44)),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Text(
+              'Community',
+              style: AppTheme.h1.copyWith(fontSize: 30, height: 1),
+            ),
+          ),
+          Text(
+            _communityFeed == 0 ? 'Recommended' : 'Latest',
+            style: AppTheme.label.copyWith(color: AppTheme.muted),
+          ),
+        ],
+      ),
       SizedBox(height: 10),
       Text(
         'Collectors, restorers, and transparent tech fans share finds here.',
         style: AppTheme.body,
       ),
-      SizedBox(height: 22),
-      for (final post in _communityPosts)
+      SizedBox(height: 16),
+      _CommunityFeedSwitch(
+        value: _communityFeed,
+        onChanged: (value) {
+          if (_communityFeed == value) return;
+          setState(() => _communityFeed = value);
+        },
+      ),
+      SizedBox(height: 14),
+      for (final post in posts)
         CommunityPostCard(
           user: post.user,
+          handle: post.handle,
           time: post.time,
           text: post.text,
           asset: post.asset,
+          likes: post.likes,
+          replies: post.replies,
+          sourceLabel: _communityFeed == 0
+              ? 'For you'
+              : 'Following ${post.handle}',
           onTap: () => _openCommunityPost(context, post),
         ),
     ];
@@ -561,12 +614,14 @@ class _CommunityThreadScreen extends StatefulWidget {
 
 class _CommunityThreadScreenState extends State<_CommunityThreadScreen> {
   final TextEditingController _replyController = TextEditingController();
+  final FocusNode _replyFocusNode = FocusNode();
   late final List<_CommunityReply> _replies = [...widget.post.replyItems];
   bool _liked = false;
 
   @override
   void dispose() {
     _replyController.dispose();
+    _replyFocusNode.dispose();
     super.dispose();
   }
 
@@ -592,6 +647,10 @@ class _CommunityThreadScreenState extends State<_CommunityThreadScreen> {
     });
   }
 
+  void _focusReplyInput() {
+    _replyFocusNode.requestFocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final metrics = ResponsiveMetrics.of(context);
@@ -609,10 +668,7 @@ class _CommunityThreadScreenState extends State<_CommunityThreadScreen> {
               metrics.pagePadding,
               0,
             ),
-            child: const TopBar(
-              title: 'Post',
-              trailing: Icons.ios_share_rounded,
-            ),
+            child: TopBar(title: 'Post', showTrailing: false),
           ),
           Expanded(
             child: ListView(
@@ -626,18 +682,45 @@ class _CommunityThreadScreenState extends State<_CommunityThreadScreen> {
                 GlassCard(
                   padding: EdgeInsets.all(18),
                   radius: metrics.cardRadius,
-                  child: _CommunityPostBody(
-                    post: widget.post,
-                    likeCount: likeCount,
-                    replyCount: replyCount,
-                    liked: _liked,
-                    onLike: _toggleLike,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CommunityPostBody(
+                        post: widget.post,
+                        likeCount: likeCount,
+                        replyCount: replyCount,
+                        liked: _liked,
+                        onReply: _focusReplyInput,
+                        onLike: _toggleLike,
+                      ),
+                      SizedBox(height: 18),
+                      Container(
+                        height: 1,
+                        color: Colors.white.withValues(alpha: 0.72),
+                      ),
+                      SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Relevant replies',
+                              style: AppTheme.h2.copyWith(fontSize: 17),
+                            ),
+                          ),
+                          Text(
+                            'Latest first',
+                            style: AppTheme.label.copyWith(
+                              color: AppTheme.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      for (final reply in _replies)
+                        _CommunityReplyTile(reply: reply),
+                    ],
                   ),
                 ),
-                SizedBox(height: 18),
-                Text('Replies', style: AppTheme.h2.copyWith(fontSize: 18)),
-                SizedBox(height: 12),
-                for (final reply in _replies) _CommunityReplyTile(reply: reply),
               ],
             ),
           ),
@@ -664,6 +747,7 @@ class _CommunityThreadScreenState extends State<_CommunityThreadScreen> {
                   Expanded(
                     child: TextField(
                       controller: _replyController,
+                      focusNode: _replyFocusNode,
                       onSubmitted: (_) => _sendReply(),
                       minLines: 1,
                       maxLines: 3,
@@ -672,7 +756,7 @@ class _CommunityThreadScreenState extends State<_CommunityThreadScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Post your reply',
+                        hintText: 'Reply to ${widget.post.user}',
                         hintStyle: AppTheme.body,
                         border: InputBorder.none,
                       ),
@@ -700,6 +784,7 @@ class _CommunityPostBody extends StatelessWidget {
     required this.likeCount,
     required this.replyCount,
     required this.liked,
+    required this.onReply,
     required this.onLike,
   });
 
@@ -707,6 +792,7 @@ class _CommunityPostBody extends StatelessWidget {
   final int likeCount;
   final int replyCount;
   final bool liked;
+  final VoidCallback onReply;
   final VoidCallback onLike;
 
   @override
@@ -720,6 +806,13 @@ class _CommunityPostBody extends StatelessWidget {
           time: post.time,
           asset: post.asset,
           avatarSize: 52,
+          onMoreTap: () => showInfoSheet(
+            context,
+            icon: Icons.more_horiz_rounded,
+            title: 'Post options',
+            body:
+                'Saving, reporting, and muting community posts are not connected yet. You can still like or reply in this demo thread.',
+          ),
         ),
         SizedBox(height: 16),
         Text(
@@ -731,17 +824,12 @@ class _CommunityPostBody extends StatelessWidget {
           ),
         ),
         SizedBox(height: 18),
-        Row(
+        Wrap(
+          spacing: 14,
+          runSpacing: 8,
           children: [
-            Text(
-              '$replyCount Replies',
-              style: AppTheme.label.copyWith(color: AppTheme.ink),
-            ),
-            SizedBox(width: 16),
-            Text(
-              '$likeCount Likes',
-              style: AppTheme.label.copyWith(color: AppTheme.ink),
-            ),
+            _CommunityMetric(value: '$replyCount', label: 'Replies'),
+            _CommunityMetric(value: '$likeCount', label: 'Likes'),
           ],
         ),
         SizedBox(height: 12),
@@ -753,6 +841,7 @@ class _CommunityPostBody extends StatelessWidget {
               icon: Icons.chat_bubble_outline_rounded,
               label: '$replyCount',
               color: AppTheme.blue,
+              onTap: onReply,
             ),
             SizedBox(width: 16),
             _CommunityActionButton(
@@ -763,12 +852,6 @@ class _CommunityPostBody extends StatelessWidget {
               color: AppTheme.red,
               active: liked,
               onTap: onLike,
-            ),
-            SizedBox(width: 16),
-            _CommunityActionButton(
-              icon: Icons.repeat_rounded,
-              label: 'Share',
-              color: AppTheme.muted,
             ),
           ],
         ),
@@ -784,14 +867,25 @@ class _CommunityReplyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(14),
-      radius: 24,
+    return Padding(
+      padding: EdgeInsets.only(top: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Avatar(asset: reply.asset, size: 40),
+          Column(
+            children: [
+              _Avatar(asset: reply.asset, size: 40),
+              Container(
+                width: 2,
+                height: 54,
+                margin: EdgeInsets.only(top: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.line.withValues(alpha: 0.86),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ],
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -813,22 +907,48 @@ class _CommunityReplyTile extends StatelessWidget {
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      size: 16,
+                    _CommunityActionButton(
+                      icon: Icons.chat_bubble_outline_rounded,
                       color: AppTheme.blue,
                     ),
-                    SizedBox(width: 14),
-                    Icon(
-                      Icons.favorite_border_rounded,
-                      size: 16,
+                    SizedBox(width: 10),
+                    _CommunityActionButton(
+                      icon: Icons.favorite_border_rounded,
                       color: AppTheme.red,
+                    ),
+                    SizedBox(width: 10),
+                    _CommunityActionButton(
+                      icon: Icons.repeat_rounded,
+                      color: AppTheme.muted,
                     ),
                   ],
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommunityMetric extends StatelessWidget {
+  const _CommunityMetric({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: AppTheme.label.copyWith(color: AppTheme.muted),
+        children: [
+          TextSpan(
+            text: value,
+            style: AppTheme.label.copyWith(color: AppTheme.ink),
+          ),
+          TextSpan(text: ' $label'),
         ],
       ),
     );
@@ -842,6 +962,7 @@ class _CommunityAuthorRow extends StatelessWidget {
     required this.time,
     required this.asset,
     required this.avatarSize,
+    this.onMoreTap,
   });
 
   final String user;
@@ -849,6 +970,7 @@ class _CommunityAuthorRow extends StatelessWidget {
   final String time;
   final String asset;
   final double avatarSize;
+  final VoidCallback? onMoreTap;
 
   @override
   Widget build(BuildContext context) {
@@ -868,16 +990,15 @@ class _CommunityAuthorRow extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
               ),
               SizedBox(height: 2),
-              Text(
-                '$handle · $time',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTheme.body.copyWith(fontSize: 12),
-              ),
+              _CommunityMetaLine(handle: handle, time: time, fontSize: 12),
             ],
           ),
         ),
-        CircleGlassButton(icon: Icons.more_horiz_rounded, size: 34),
+        CircleGlassButton(
+          icon: Icons.more_horiz_rounded,
+          size: 34,
+          onTap: onMoreTap,
+        ),
       ],
     );
   }
@@ -907,13 +1028,42 @@ class _CommunityInlineMeta extends StatelessWidget {
           ),
         ),
         SizedBox(width: 6),
+        Expanded(
+          child: _CommunityMetaLine(handle: handle, time: time, fontSize: 11),
+        ),
+      ],
+    );
+  }
+}
+
+class _CommunityMetaLine extends StatelessWidget {
+  const _CommunityMetaLine({
+    required this.handle,
+    required this.time,
+    required this.fontSize,
+  });
+
+  final String handle;
+  final String time;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
         Flexible(
           child: Text(
-            '$handle · $time',
+            handle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTheme.body.copyWith(fontSize: 11),
+            style: AppTheme.body.copyWith(fontSize: fontSize),
           ),
+        ),
+        SizedBox(width: 8),
+        Text(
+          time,
+          maxLines: 1,
+          style: AppTheme.body.copyWith(fontSize: fontSize),
         ),
       ],
     );
@@ -923,14 +1073,14 @@ class _CommunityInlineMeta extends StatelessWidget {
 class _CommunityActionButton extends StatelessWidget {
   const _CommunityActionButton({
     required this.icon,
-    required this.label,
+    this.label,
     required this.color,
     this.active = false,
     this.onTap,
   });
 
   final IconData icon;
-  final String label;
+  final String? label;
   final Color color;
   final bool active;
   final VoidCallback? onTap;
@@ -948,11 +1098,13 @@ class _CommunityActionButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 19, color: color),
-            SizedBox(width: 5),
-            Text(
-              label,
-              style: AppTheme.label.copyWith(color: color, fontSize: 12),
-            ),
+            if (label != null) ...[
+              SizedBox(width: 5),
+              Text(
+                label!,
+                style: AppTheme.label.copyWith(color: color, fontSize: 12),
+              ),
+            ],
           ],
         ),
       ),
@@ -970,6 +1122,31 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipOval(
       child: ProductImage(asset: asset, width: size, height: size),
+    );
+  }
+}
+
+class _RatingLine extends StatelessWidget {
+  const _RatingLine({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star_rounded, color: AppTheme.blue, size: 14),
+          SizedBox(width: 3),
+          Text(
+            '${listing.rating.toStringAsFixed(1)} (${listing.reviews})',
+            style: AppTheme.label.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1026,6 +1203,96 @@ class HomeSegmentControl extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _CommunityFeedSwitch extends StatelessWidget {
+  const _CommunityFeedSwitch({required this.value, required this.onChanged});
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      height: 50,
+      radius: 24,
+      padding: EdgeInsets.zero,
+      opacity: 0.48,
+      child: Row(
+        children: [
+          _CommunityFeedTab(
+            label: 'For you',
+            active: value == 0,
+            onTap: () => onChanged(0),
+          ),
+          _CommunityFeedTab(
+            label: 'Following',
+            active: value == 1,
+            onTap: () => onChanged(1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommunityFeedTab extends StatelessWidget {
+  const _CommunityFeedTab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: LiquidPressable(
+        onTap: onTap,
+        active: active,
+        borderRadius: BorderRadius.circular(24),
+        glowColor: AppTheme.blue,
+        pressedScale: 0.98,
+        child: SizedBox.expand(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AnimatedDefaultTextStyle(
+                duration: Duration(milliseconds: 160),
+                curve: Curves.easeOutCubic,
+                style: TextStyle(
+                  color: active ? AppTheme.ink : AppTheme.muted,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 6),
+              AnimatedContainer(
+                duration: Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                width: active ? 34 : 0,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: AppTheme.blue,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1099,38 +1366,36 @@ class ListingCard extends StatelessWidget {
       }
       final imageWidth = 172.0;
       final imageHeight = 184.0;
+      final compact = metrics.compact;
       final detailsColumn = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(listing.status.toUpperCase(), style: AppTheme.label),
-          SizedBox(height: 6),
+          SizedBox(height: compact ? 3 : 5),
           Text(
             listing.shortTitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTheme.h2.copyWith(fontSize: large ? 25 : 19),
+            style: AppTheme.h2.copyWith(
+              fontSize: large ? 25 : (compact ? 17 : 18),
+            ),
           ),
-          SizedBox(height: 6),
-          Text(
-            listing.condition,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTheme.body,
-          ),
+          SizedBox(height: compact ? 3 : 5),
+          _RatingLine(listing: listing),
           const Spacer(),
           Text(
             listing.priceLabel,
             style: TextStyle(
               color: AppTheme.red,
               fontWeight: FontWeight.w900,
-              fontSize: 13,
+              fontSize: compact ? 12 : 13,
             ),
           ),
           if (!large) ...[
-            SizedBox(height: 4),
+            SizedBox(height: compact ? 2 : 4),
             Text(
               '${listing.views} views',
-              style: AppTheme.body.copyWith(fontSize: 11),
+              style: AppTheme.body.copyWith(fontSize: compact ? 10 : 11),
             ),
           ],
         ],
@@ -1148,7 +1413,7 @@ class ListingCard extends StatelessWidget {
           blur: 42,
           borderOpacity: 0.9,
           child: SizedBox(
-            height: metrics.listingActionCardHeight,
+            height: metrics.listingActionCardHeight + (compact ? 4 : 0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

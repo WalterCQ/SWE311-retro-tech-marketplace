@@ -5,6 +5,7 @@ import '../models/listing.dart';
 import '../models/order_record.dart';
 import '../models/payment_method.dart';
 import '../models/user_profile.dart';
+import '../services/demo_auth_service.dart';
 
 class ListingStore extends ChangeNotifier {
   ListingStore({ListingRepository? repository})
@@ -16,6 +17,7 @@ class ListingStore extends ChangeNotifier {
   final List<OrderRecord> _orders = [];
   final Set<String> _followedSellers = {};
   UserProfile _profile = UserProfile.defaults;
+  DemoAuthProvider? _demoAuthProvider;
   String _selectedPaymentMethodId = PaymentMethodOption.visa.id;
   bool _notifications = true;
   bool _privacy = true;
@@ -31,6 +33,8 @@ class ListingStore extends ChangeNotifier {
       .toList(growable: false);
   List<OrderRecord> get orders => List.unmodifiable(_orders);
   UserProfile get profile => _profile;
+  DemoAuthProvider? get demoAuthProvider => _demoAuthProvider;
+  bool get isDemoAuthenticated => _demoAuthProvider != null;
   PaymentMethodOption get selectedPaymentMethod =>
       PaymentMethodOption.byId(_selectedPaymentMethodId);
   bool get notifications => _notifications;
@@ -60,6 +64,9 @@ class ListingStore extends ChangeNotifier {
       ..addAll(followedSellers);
     _selectedPaymentMethodId =
         prefs.getString(_selectedPaymentKey) ?? PaymentMethodOption.visa.id;
+    _demoAuthProvider = DemoAuthService.providerFromValue(
+      prefs.getString(DemoAuthService.providerKey),
+    );
     _notifications = prefs.getBool(_notificationsKey) ?? true;
     _privacy = prefs.getBool(_privacyKey) ?? true;
     _loaded = true;
@@ -129,6 +136,21 @@ class ListingStore extends ChangeNotifier {
   Future<void> saveProfile(UserProfile profile) async {
     await _repository.saveProfile(profile);
     _profile = profile;
+    notifyListeners();
+  }
+
+  Future<void> signInWithDemoProvider(DemoAuthProvider provider) async {
+    final profile = provider.profile;
+    await DemoAuthService.saveProvider(provider);
+    await _repository.saveProfile(profile);
+    _demoAuthProvider = provider;
+    _profile = profile;
+    notifyListeners();
+  }
+
+  Future<void> signOut() async {
+    await DemoAuthService.clearProvider();
+    _demoAuthProvider = null;
     notifyListeners();
   }
 

@@ -4,6 +4,7 @@ import '../../constants/theme.dart';
 import '../../store/listing_store.dart';
 import '../../widgets/glass_input.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/interaction_helpers.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -103,19 +104,30 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
               SizedBox(width: 10),
               Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: AppTheme.body.copyWith(fontSize: 12),
-                    children: [
-                      TextSpan(text: 'I agree to the '),
-                      TextSpan(
-                        text: 'Terms & Privacy Policy',
-                        style: TextStyle(
-                          color: AppTheme.blue,
-                          fontWeight: FontWeight.w900,
+                child: GestureDetector(
+                  key: const ValueKey('terms-policy-link'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => showInfoSheet(
+                    context,
+                    icon: Icons.privacy_tip_outlined,
+                    title: 'Terms & Privacy Policy',
+                    body:
+                        'RetroTech keeps account, listing, payment, and message data inside this coursework demo. A full legal policy page has not been connected yet.',
+                  ),
+                  child: RichText(
+                    text: TextSpan(
+                      style: AppTheme.body.copyWith(fontSize: 12),
+                      children: [
+                        TextSpan(text: 'I agree to the '),
+                        TextSpan(
+                          text: 'Terms & Privacy Policy',
+                          style: TextStyle(
+                            color: AppTheme.blue,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -128,8 +140,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
           ),
           SizedBox(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 'Already have an account? ',

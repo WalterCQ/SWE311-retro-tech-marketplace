@@ -19,9 +19,13 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int _index = _shellIndexFor(widget.initialIndex);
+  late final _categoriesSearchController = CategoriesSearchController();
   late final List<Widget> _pages = [
-    HomeScreen(store: widget.store),
-    CategoriesScreen(store: widget.store),
+    HomeScreen(store: widget.store, onSearchTap: _openCategorySearch),
+    CategoriesScreen(
+      store: widget.store,
+      searchTrigger: _categoriesSearchController,
+    ),
     InboxScreen(inShell: true),
     AccountProfileScreen(store: widget.store),
   ];
@@ -29,6 +33,20 @@ class _MainShellState extends State<MainShell> {
   int _shellIndexFor(int navIndex) {
     if (navIndex == 2) return 0;
     return navIndex > 2 ? navIndex - 1 : navIndex;
+  }
+
+  void _openCategorySearch() {
+    setState(() => _index = 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _categoriesSearchController.openSearch();
+    });
+  }
+
+  @override
+  void dispose() {
+    _categoriesSearchController.dispose();
+    super.dispose();
   }
 
   @override

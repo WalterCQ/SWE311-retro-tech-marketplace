@@ -69,7 +69,10 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                   Spacer(),
                   Text(widget.category, style: AppTheme.h2),
                   Spacer(),
-                  CircleGlassButton(icon: Icons.tune_rounded),
+                  CircleGlassButton(
+                    icon: Icons.tune_rounded,
+                    onTap: () => _showFilterSheet(context),
+                  ),
                 ],
               ),
               SizedBox(height: 22),
@@ -165,5 +168,76 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
             .toList(growable: false),
       _ => items,
     };
+  }
+
+  Future<void> _showFilterSheet(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.white.withValues(alpha: 0.38),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+            child: GlassCard(
+              radius: 28,
+              opacity: 0.84,
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filter ${widget.category}',
+                    style: AppTheme.h2.copyWith(fontSize: 20),
+                  ),
+                  const SizedBox(height: 14),
+                  for (final label in const [
+                    'All',
+                    'Under RM1000',
+                    'RM1000+',
+                    'Featured',
+                  ])
+                    LiquidPressable(
+                      onTap: () => Navigator.pop(sheetContext, label),
+                      active: _filter == label,
+                      borderRadius: BorderRadius.circular(18),
+                      glowColor: AppTheme.blue,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: AppTheme.label.copyWith(
+                                  color: _filter == label
+                                      ? AppTheme.blue
+                                      : AppTheme.ink,
+                                ),
+                              ),
+                            ),
+                            if (_filter == label)
+                              const Icon(
+                                Icons.check_rounded,
+                                color: AppTheme.blue,
+                                size: 20,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (selected == null || !mounted) return;
+    setState(() => _filter = selected);
   }
 }

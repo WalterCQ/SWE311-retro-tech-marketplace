@@ -6,6 +6,7 @@ import '../../store/seed_data.dart';
 import '../../widgets/aero_background.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/glass_scaffold.dart';
+import '../../widgets/interaction_helpers.dart';
 import '../../widgets/liquid_button.dart';
 import '../../widgets/logo_mark.dart';
 import '../../widgets/navigation.dart';
@@ -66,6 +67,12 @@ class ProductDetailScreen extends StatelessWidget {
                         CircleGlassButton(
                           icon: Icons.ios_share_rounded,
                           size: 44,
+                          onTap: () => copyShareText(
+                            context,
+                            label: 'Product details',
+                            text:
+                                'RetroTech listing: ${item.title} (${item.priceLabel}) from ${item.seller}.',
+                          ),
                         ),
                         SizedBox(width: metrics.compact ? 10 : 14),
                         FavoriteButton(store: store, listing: item, size: 44),

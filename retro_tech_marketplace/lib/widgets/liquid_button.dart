@@ -257,7 +257,7 @@ class CircleGlassButton extends StatelessWidget {
       width: size,
       height: size,
       child: LiquidPressable(
-        onTap: onTap ?? () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(size / 2),
         glowColor: color,
         child: GlassCard(
